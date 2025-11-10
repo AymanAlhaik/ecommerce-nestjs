@@ -1,0 +1,17 @@
+###
+POST {{baseUrl}}/user
+Content-Type: application/json
+
+{
+  "name": "ali",
+  "email": "ali.doe@example.com",
+  "password": "securePass123",
+  "role": "admin",
+  "avatar": "https://example.com/avatars/john.png",
+  "age": 28,
+  "phoneNumber": "+1-202-555-0147",
+  "address": "123 Main Street, Springfield",
+  "active": true,
+  "verificationCode": "ABC123XYZ",
+  "gender": "male"
+}
