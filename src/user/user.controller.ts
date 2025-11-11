@@ -5,7 +5,7 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
+  Delete, UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -13,6 +13,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './user.schema';
 import { Model } from 'mongoose';
+import { Roles } from './decorators/roles.decorator';
+import { AuthGuard } from './guards/auth.guard';
 
 @Controller('user')
 export class UserController {
@@ -22,8 +24,11 @@ export class UserController {
   ) {}
 
   @Post()
+  @Roles(['admin'])
+  @UseGuards(AuthGuard)
   create(@Body() createUserDto: CreateUserDto) {
-    return this.userModel.create(createUserDto);
+    // return this.userModel.create(createUserDto);
+    return 'Ok'
   }
 
   @Get()
