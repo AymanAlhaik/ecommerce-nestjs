@@ -1,18 +1,30 @@
 ###
-POST {{baseUrl}}/user
+POST {{baseUrl}}/users
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4ifQ.4XDTTmF2BBd6-BuUpmLaAbnZe76Hl739uPzwLgJ2jkQ
 
 {
-  "name": "hasan",
-  "email": "hasan@1.com",
-  "role": "user",
+  "name": "amar",
+  "email": "4@4.com",
   "password": "hasan1234",
-  "avatar": "www.photo.com/user/hasan",
-  "age": 29,
-  "phoneNumber": "+1-202-555-0147",
-  "address": "123 Main Street, Springfield",
-  "active": true,
-  "gender": "male"
-}
+  "active": false
 
+}
+###
+GET {{baseUrl}}/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4ifQ.4XDTTmF2BBd6-BuUpmLaAbnZe76Hl739uPzwLgJ2jkQ
+
+###
+GET {{baseUrl}}/users/6913e40cfb3a524cd48eb491
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4ifQ.4XDTTmF2BBd6-BuUpmLaAbnZe76Hl739uPzwLgJ2jkQ
+###
+PATCH {{baseUrl}}/users/6913d1a23ebb7e71bbb108d8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4ifQ.4XDTTmF2BBd6-BuUpmLaAbnZe76Hl739uPzwLgJ2jkQ
+Content-Type: application/json
+
+{
+  "name": "salem"
+}
+###
+DELETE {{baseUrl}}/users/6913d1a23ebb7e71bbb108d8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4ifQ.4XDTTmF2BBd6-BuUpmLaAbnZe76Hl739uPzwLgJ2jkQ

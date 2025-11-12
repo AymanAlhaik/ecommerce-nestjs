@@ -24,6 +24,7 @@ export class CreateUserDto {
   password: string;
 
   @IsEnum(['user', 'admin'], { message: 'Role must be either user or admin' })
+  @IsOptional()
   role: string;
 
   @IsOptional()
@@ -55,6 +56,7 @@ export class CreateUserDto {
   verificationCode?: string;
 
   @IsEnum(['male', 'female'], { message: 'Gender must be either male or female' })
+  @IsOptional()
   gender: string;
 
 }
