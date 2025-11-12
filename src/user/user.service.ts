@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -25,7 +26,7 @@ export class UserService {
     const props = {
       password,
       role: createUserDto.role ?? 'user',
-      active:createUserDto.active ?? true
+      active: createUserDto.active ?? true,
     };
     //{username, password, email, role = user, active=true}
     const createdUser = await this.userModel.create({
@@ -35,9 +36,48 @@ export class UserService {
     return new AppResponse({ status: 201, data: createdUser });
   }
 
-  async findAll(): Promise<AppResponse<User[]>> {
-    const allUsers = await this.userModel.find().select('-password -__v');
-    return new AppResponse({ data: allUsers });
+  async findAll(query: any): Promise<AppResponse<User[]>> {
+    const { page = 1, limit = 10, sort = 'desc', name, email, role } = query;
+
+    if (Number.isNaN(Number(limit)) || limit <= 0) {
+      throw new HttpException('invalid limit', 400);
+    }
+    if (Number.isNaN(Number(page)) || page <= 0) {
+      throw new HttpException('invalid page', 400);
+    }
+    if (!['asc', 'desc'].includes(sort)) {
+      throw new HttpException('invalid sort', 400);
+    }
+
+    const totalItems = await this.userModel.countDocuments({
+      ...(name && { name: new RegExp(`^${name}$`, 'i') }),
+      ...(email && { email: new RegExp(`^${email}$`, 'i') }),
+      ...(role && { role: new RegExp(`^${role}$`, 'i') }),
+    });
+
+    const skip = (page - 1) * limit;
+    const users = await this.userModel
+      .find({
+        ...(name && { name: new RegExp(name, 'i') }),
+        ...(email && { email: new RegExp(email, 'i') }),
+        ...(role && { role: new RegExp(`^${role}$`, 'i') }),
+      })
+      .skip(skip)
+      .limit(limit)
+      .sort({ name: sort })
+      .select('-password -__v');
+
+    return new AppResponse({
+      data: users,
+      pagination: {
+        totalItems,
+        itemCount: users.length,
+        itemsPerPage: limit,
+        currentPage: page,
+        totalPages: Math.ceil(totalItems / limit),
+      },
+    });
+
   }
 
   async findOne(id: string): Promise<AppResponse<User>> {

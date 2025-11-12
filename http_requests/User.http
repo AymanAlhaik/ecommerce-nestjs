@@ -11,7 +11,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4if
 
 }
 ###
-GET {{baseUrl}}/users
+GET {{baseUrl}}/users?page=3&limit=4
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4ifQ.4XDTTmF2BBd6-BuUpmLaAbnZe76Hl739uPzwLgJ2jkQ
 
 ###
