@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { AuthModule } from './auth/auth.module';
 import * as process from 'node:process';
 
 @Module({
@@ -12,9 +13,10 @@ import * as process from 'node:process';
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET as string,
-      signOptions: { expiresIn: '60s' },
+      signOptions: { expiresIn: '60h' },
     }),
     UserModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],

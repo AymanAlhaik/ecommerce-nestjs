@@ -11,7 +11,6 @@ import { User } from './user.schema';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { AppResponse } from '../utils/appResponse';
-import { App } from 'supertest/types';
 
 @Injectable()
 export class UserService {

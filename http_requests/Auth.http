@@ -1,0 +1,17 @@
+###
+POST {{baseUrl}}/auth/sign-up
+Content-Type: application/json
+
+{
+  "name":"samer",
+  "email": "samer@1.com",
+  "password": "aim0938"
+}
+###
+POST {{baseUrl}}/auth/sign-in
+Content-Type: application/json
+
+{
+  "email": "samer@1.com",
+  "password": "aim0938"
+}
