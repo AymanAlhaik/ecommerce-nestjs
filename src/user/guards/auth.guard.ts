@@ -4,7 +4,12 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JsonWebTokenError, JwtService, NotBeforeError, TokenExpiredError } from '@nestjs/jwt';
+import {
+  JsonWebTokenError,
+  JwtService,
+  NotBeforeError,
+  TokenExpiredError,
+} from '@nestjs/jwt';
 import { Request } from 'express';
 import * as process from 'node:process';
 import { UserService } from '../user.service';
@@ -29,17 +34,10 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('Taken is required');
     }
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_SECRET,
-      });
-      if (
-        !payload.role ||
-        payload.role === '' ||
-        !roles.includes(payload.role)
-      ) {
-        throw new UnauthorizedException('Your role is not authorized for this action');
+      const payload = await this.jwtService.verifyAsync(token);
+      if (payload.role === '' || !roles.includes(payload.role)) {
+        return false;
       }
-
       request['user'] = payload;
     } catch (e) {
       if (e instanceof TokenExpiredError) {
@@ -51,7 +49,6 @@ export class AuthGuard implements CanActivate {
       if (e instanceof NotBeforeError) {
         throw new UnauthorizedException('Token is not active yet');
       }
-
     }
     return true;
   }

@@ -12,7 +12,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4if
 }
 ###
 GET {{baseUrl}}/users?page=3&limit=4
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4ifQ.4XDTTmF2BBd6-BuUpmLaAbnZe76Hl739uPzwLgJ2jkQ
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU0MTI4NmU5OGQzMzgzYWRlYjM4NyIsImVtYWlsIjoic2FtZXJAMS5jb20iLCJyb2xlIjoidXNlciIsImlhdCI6MTc2MzAwNDAwMywiZXhwIjoxNzYzMjIwMDAzfQ.WvBYLsZ6t2tKzhoFl4MC9xQuA8QSRw7MntA9GIUEpdU
+
 
 ###
 GET {{baseUrl}}/users/6913e40cfb3a524cd48eb491
