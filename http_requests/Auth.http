@@ -3,15 +3,39 @@ POST {{baseUrl}}/auth/sign-up
 Content-Type: application/json
 
 {
-  "name":"samer",
-  "email": "samer@1.com",
-  "password": "aim0938"
+  "name":"ayman",
+  "email": "AymanAlhaikg@gmail.com",
+  "password": "1234"
 }
 ###
 POST {{baseUrl}}/auth/sign-in
 Content-Type: application/json
 
 {
-  "email": "samer@1.com",
+  "email": "AymanAlhaikg@gmail.com",
+  "password": "aimaim0938"
+}
+
+### Rest Password
+POST {{baseUrl}}/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "AymanAlhaikg@gmail.com"
+}
+###
+POST {{baseUrl}}/auth/verify-code
+Content-Type: application/json
+
+{
+  "email": "AymanAlhaikg@gmail.com",
+  "code": "924852"
+}
+###
+POST {{baseUrl}}/auth/change-password
+Content-Type: application/json
+
+{
+  "email": "AymanAlhaikg@gmail.com",
   "password": "aim0938"
 }

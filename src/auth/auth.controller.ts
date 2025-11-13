@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignInDto, SignUpDto } from './dto/create-auth.dto';
+import { ResetPasswordDto, SignInDto, SignUpDto, VerifyCodeDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 
 @Controller('auth')
@@ -27,5 +27,39 @@ export class AuthController {
   @Post('sign-in')
   signIn(@Body() singIn:SignInDto){
     return this.authService.signIn(singIn);
+  }
+
+
+  /**
+   * @docs Reset the password (send verification code to passed email)
+   * @param resetPassDto {email}
+   * @route POST ~/auth/reset-password
+   * @canAcess public
+   */
+  @Post('reset-password')
+  resetPassword(@Body() resetPassDto:ResetPasswordDto){
+    return this.authService.resetPassword(resetPassDto);
+  }
+
+  /**
+   * @docs Verify Code (within 10 minutes)
+   * @param verifyCodeDto {email, code}
+   * @route POST ~/auth/verify-code
+   * @canAcess public
+   */
+  @Post('verify-code')
+  verifyCode(@Body() verifyCodeDto:VerifyCodeDto){
+    return this.authService.verifyCode(verifyCodeDto);
+  }
+
+  /**
+   * @docs change password (within 10 minutes)
+   * @param signInDto {email, new Password}
+   * @route POST ~/auth/change-password
+   * @canAcess public
+   */
+  @Post('change-password')
+  changePassword(@Body() signInDto:SignInDto){
+   return this.authService.changePassword(signInDto);
   }
 }
