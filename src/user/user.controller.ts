@@ -5,22 +5,21 @@ import {
   Body,
   Patch,
   Param,
-  Delete, UseGuards, Query,
+  Delete,
+  UseGuards,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Roles } from './decorators/roles.decorator';
 import { AuthGuard } from './guards/auth.guard';
-
+import { UserPayload } from './decorators/userPayload.decorator';
 
 @Controller('users')
-@Roles(['admin'])
-@UseGuards(AuthGuard)
 export class UserController {
-  constructor(
-    private readonly userService: UserService,
-  ) {}
+  //FOR ADMIN
+  constructor(private readonly userService: UserService) {}
 
   /**
    * @docs Admin Can Create a User
@@ -43,7 +42,7 @@ export class UserController {
   @Get()
   @Roles(['admin'])
   @UseGuards(AuthGuard)
-  findAll(@Query() query:any) {
+  findAll(@Query() query: any) {
     return this.userService.findAll(query);
   }
 
@@ -85,5 +84,54 @@ export class UserController {
   @UseGuards(AuthGuard)
   remove(@Param('id') id: string) {
     return this.userService.remove(id);
+  }
+}
+
+//FOR USER
+@Controller('user-me')
+export class UserMeController {
+  constructor(private readonly userService: UserService) {}
+
+  /**
+   * @docs User Can Get his data
+   * @route GET ~/user-me
+   * @param currentUser current logged-in user
+   * @canAcess [Admin, User]
+   */
+  @Get()
+  @Roles(['admin', 'user'])
+  @UseGuards(AuthGuard)
+  getMe(@UserPayload() currentUser: any) {
+    return this.userService.getMe(currentUser);
+  }
+
+  /**
+   * @docs User Can Update his data
+   * @param updateUserDto {all props as optional}
+   * @param userPayload current logged-in user
+   * @route PATCH ~/user-me
+   * @canAcess [Admin]
+   */
+  @Patch('')
+  @Roles(['admin', 'user'])
+  @UseGuards(AuthGuard)
+  update(
+    @UserPayload() userPayload: any,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.userService.updateMe(userPayload, updateUserDto);
+  }
+
+  /**
+   * @docs Admin Can Delete a User
+   * @param userPayload current logged-in user
+   * @route DELETE ~/user-me
+   * @canAcess [Admin]
+   */
+  @Delete('')
+  @Roles(['admin', 'user'])
+  @UseGuards(AuthGuard)
+  remove(@UserPayload() userPayload: any) {
+    return this.userService.deleteMe(userPayload);
   }
 }

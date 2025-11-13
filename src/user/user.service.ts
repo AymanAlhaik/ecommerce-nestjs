@@ -33,7 +33,12 @@ export class UserService {
       ...createUserDto,
       ...props,
     });
-    return new AppResponse({ status: 201, data: createdUser });
+
+    const safeUser = await this.userModel
+      .findById(createdUser._id)
+      .select('-password -__v');
+
+    return new AppResponse({ status: 201, data: safeUser! });
   }
 
   async findAll(query: any): Promise<AppResponse<User[]>> {
@@ -50,8 +55,8 @@ export class UserService {
     }
 
     const totalItems = await this.userModel.countDocuments({
-      ...(name && { name: new RegExp(`^${name}$`, 'i') }),
-      ...(email && { email: new RegExp(`^${email}$`, 'i') }),
+      ...(name && { name: new RegExp(name, 'i') }),
+      ...(email && { email: new RegExp(email, 'i') }),
       ...(role && { role: new RegExp(`^${role}$`, 'i') }),
     });
 
@@ -77,7 +82,6 @@ export class UserService {
         totalPages: Math.ceil(totalItems / limit),
       },
     });
-
   }
 
   async findOne(id: string): Promise<AppResponse<User>> {
@@ -122,4 +126,24 @@ export class UserService {
     await this.userModel.findByIdAndDelete(id);
     return new AppResponse();
   }
+
+  //FOR USER
+  async getMe(userPayload: any) {
+    return this.findOne(userPayload.id);
+  }
+
+  async updateMe(userPayload: any, UpdateUserDto: UpdateUserDto) {
+    return this.update(userPayload.id, UpdateUserDto);
+  }
+
+  async deleteMe(userPayload: any) {
+    const user = await this.userModel.findByIdAndUpdate(userPayload.id, {
+      active: false,
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return new AppResponse();
+  }
+
 }

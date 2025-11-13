@@ -1,0 +1,17 @@
+//eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTNkNDI0NWFiN2M4YzgxZDFjNWVkNiIsInJvbGUiOiJ1c2VyIn0.CBh4xrvJ4jI3grPpfakrHAidbh4omIipov9oxy3Tj1w
+//for user with id 6913d4245ab7c8c81d1c5ed6
+
+###
+GET {{baseUrl}}/user-me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTNkNDI0NWFiN2M4YzgxZDFjNWVkNiIsInJvbGUiOiJ1c2VyIn0.CBh4xrvJ4jI3grPpfakrHAidbh4omIipov9oxy3Tj1w
+###
+PATCH {{baseUrl}}/user-me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTNkNDI0NWFiN2M4YzgxZDFjNWVkNiIsInJvbGUiOiJ1c2VyIn0.CBh4xrvJ4jI3grPpfakrHAidbh4omIipov9oxy3Tj1w
+Content-Type: application/json
+
+{
+  "name": "Nour"
+}
+###
+DELETE {{baseUrl}}/user-me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTNkNDI0NWFiN2M4YzgxZDFjNWVkNiIsInJvbGUiOiJ1c2VyIn0.CBh4xrvJ4jI3grPpfakrHAidbh4omIipov9oxy3Tj1w
