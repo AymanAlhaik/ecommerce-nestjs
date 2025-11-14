@@ -1,0 +1,29 @@
+### Create SubCategory (Admin only)
+POST {{baseUrl}}/sub-categories
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzA4NzkzOSwiZXhwIjoxNzYzMzAzOTM5fQ.IzU-9rRr6CxYpXb3mc-NgBP78IcfczSr2vMrcp1hQ7g
+Content-Type: application/json
+
+{
+  "name": "tv screen",
+  "category": "69167324fde30635285a8e10"
+}
+
+### Get All SubCategories (Public)
+GET {{baseUrl}}/sub-categories
+
+### Get One SubCategory by ID (Public)
+GET {{baseUrl}}/sub-categories/6916968677491e68c49c5ba8
+
+### Update SubCategory (Admin only)
+PATCH {{baseUrl}}/sub-categories/6916968677491e68c49c5ba8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzA4NzkzOSwiZXhwIjoxNzYzMzAzOTM5fQ.IzU-9rRr6CxYpXb3mc-NgBP78IcfczSr2vMrcp1hQ7g
+Content-Type: application/json
+
+{
+  "name": "Gaming Laptop",
+  "category": "69167324fde30635285a8e10"
+}
+
+### Delete SubCategory (Admin only)
+DELETE {{baseUrl}}/sub-categories/6916968677491e68c49c5ba8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzA4NzkzOSwiZXhwIjoxNzYzMzAzOTM5fQ.IzU-9rRr6CxYpXb3mc-NgBP78IcfczSr2vMrcp1hQ7g
