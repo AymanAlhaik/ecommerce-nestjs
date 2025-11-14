@@ -1,0 +1,21 @@
+###
+GET {{baseUrl}}/categories?name=9
+###
+POST {{baseUrl}}/categories
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzA3ODg5MiwiZXhwIjoxNzYzMjk0ODkyfQ.D9ow7NttHBaTY8jTPOTSD5H77GAreEGo7lf9ImIqTRQ
+Content-Type: application/json
+
+{
+  "name": "phones"
+}
+###
+PATCH {{baseUrl}}/categories/6916733ffde30635285a8e14
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzA3ODg5MiwiZXhwIjoxNzYzMjk0ODkyfQ.D9ow7NttHBaTY8jTPOTSD5H77GAreEGo7lf9ImIqTRQ
+Content-Type: application/json
+
+{
+  "name": "laptop"
+}
+###
+DELETE {{baseUrl}}/categories/691674ef28c68a6d40ce3800
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzA3ODg5MiwiZXhwIjoxNzYzMjk0ODkyfQ.D9ow7NttHBaTY8jTPOTSD5H77GAreEGo7lf9ImIqTRQ
