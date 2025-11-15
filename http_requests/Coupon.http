@@ -1,0 +1,227 @@
+// **** Coupon API Tests (Admin Only) ****
+// Set your baseUrl in WebStorm's REST Client environment variables
+// Example: baseUrl = http://localhost:3000/api
+@authToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzE2NzUzOSwiZXhwIjoxNzYzMzgzNTM5fQ.PiL62PHooumRE4ugJ6CfO3Mcx__nNuqC7Daedo1c43M
+@couponId=6917df9ded8f9652bcc435c7
+
+### @name createCoupon
+# @docs Create Coupon - Success
+POST {{baseUrl}}/coupons
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "SUMMER2024",
+  "expiryDate": "2025-12-31",
+  "discount": 25
+}
+
+> {%
+  client.test("Create coupon - success", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.global.set("couponId", response.body._id);
+  });
+%}
+### @name createCoupon
+# @docs Create Coupon - Success
+POST {{baseUrl}}/coupons
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "SUMMER2024",
+  "expiryDate": "2025-12-31T23:59:59.000Z",
+  "discount": 25
+}
+
+> {%
+  client.test("Create coupon - success", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.global.set("couponId", response.body._id);
+  });
+%}
+
+### @name createCouponDuplicate
+# @docs Create Coupon - Duplicate Name (Should return 409 Conflict)
+POST {{baseUrl}}/coupons
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "SUMMER2024",
+  "expiryDate": "2025-12-31T23:59:59.000Z",
+  "discount": 30
+}
+
+> {%
+  client.test("Create coupon - duplicate name", function() {
+    client.assert(response.status === 409, "Status should be 409 Conflict");
+  });
+%}
+
+### @name createCouponInvalid
+# @docs Create Coupon - Invalid Data (Should return 400 Bad Request)
+POST {{baseUrl}}/coupons
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "ab",
+  "expiryDate": "invalid-date",
+  "discount": 101
+}
+
+> {%
+  client.test("Create coupon - invalid data", function() {
+    client.assert(response.status === 400, "Status should be 400 Bad Request");
+  });
+%}
+
+### @name createCouponPastDate
+# @docs Create Coupon - Past Expiry Date (Should return 400 Bad Request)
+POST {{baseUrl}}/coupons
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "EXPIRED2020",
+  "expiryDate": "2020-01-01T00:00:00.000Z",
+  "discount": 20
+}
+
+> {%
+  client.test("Create coupon - past expiry date", function() {
+    client.assert(response.status === 400, "Status should be 400 Bad Request");
+  });
+%}
+
+### @name getAllCoupons
+# @docs Get All Coupons - Admin Only
+GET {{baseUrl}}/coupons
+Authorization: Bearer {{authToken}}
+
+> {%
+  client.test("Get all coupons", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(Array.isArray(response.body), "Response should be an array");
+  });
+%}
+
+### @name getCouponById
+# @docs Get Single Coupon - Admin Only
+GET {{baseUrl}}/coupons/{{couponId}}
+Authorization: Bearer {{authToken}}
+
+> {%
+  client.test("Get coupon by ID - success", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body._id === client.global.get("couponId"), "ID should match");
+    client.assert(response.body.name === "SUMMER2024", "Name should match");
+  });
+%}
+
+### @name getCouponNotFound
+# @docs Get Single Coupon - Not Found (Should return 404)
+GET {{baseUrl}}/coupons/507f1f77bcf86cd799439011
+Authorization: Bearer {{authToken}}
+
+> {%
+  client.test("Get coupon - not found", function() {
+    client.assert(response.status === 404, "Status should be 404 Not Found");
+  });
+%}
+
+### @name updateCoupon
+# @docs Update Coupon - Success
+PATCH {{baseUrl}}/coupons/{{couponId}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "discount": 30,
+  "expiryDate": "2026-01-31T23:59:59.000Z"
+}
+
+> {%
+  client.test("Update coupon - success", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.discount === 30, "Discount should be updated");
+  });
+%}
+
+### @name updateCouponDuplicate
+# @docs Update Coupon - Duplicate Name (Should return 409 Conflict)
+# First create another coupon to test duplicate
+POST {{baseUrl}}/coupons
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "WINTER2024",
+  "expiryDate": "2025-12-31T23:59:59.000Z",
+  "discount": 15
+}
+
+> {%
+  client.test("Pre-create coupon for duplicate test", function() {
+    client.global.set("anotherCouponId", response.body._id);
+  });
+%}
+###
+PATCH {{baseUrl}}/coupons/{{couponId}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "WINTER2024"
+}
+
+> {%
+ client.test("Update coupon - duplicate name", function() {
+   client.assert(response.status === 409, "Status should be 409 Conflict");
+ });
+%}
+
+### @name deleteCoupon
+# @docs Delete Coupon - Success
+DELETE {{baseUrl}}/coupons/{{couponId}}
+Authorization: Bearer {{authToken}}
+
+> {%
+  client.test("Delete coupon - success", function() {
+    client.assert(response.status === 204, "Status should be 204 No Content");
+  });
+%}
+
+### @name deleteCouponNotFound
+# @docs Delete Coupon - Not Found (Should return 404)
+DELETE {{baseUrl}}/coupons/507f1f77bcf86cd799439011
+Authorization: Bearer {{authToken}}
+
+> {%
+  client.test("Delete coupon - not found", function() {
+    client.assert(response.status === 404, "Status should be 404 Not Found");
+  });
+%}
+
+### @name cleanup
+# @docs Cleanup - Delete test data
+DELETE {{baseUrl}}/coupons/{{anotherCouponId}}
+Authorization: Bearer {{authToken}}
+
+> {%
+  client.test("Cleanup test data", function() {
+    client.assert(response.status === 204, "Cleanup should succeed");
+  });
+%}
+
+### @name unauthorizedAccess
+# @docs Unauthorized Access (Should return 401/403)
+GET {{baseUrl}}/coupons
+// No Authorization header
+
+> {%
+  client.test("Unauthorized access", function() {
+    client.assert(response.status === 401 || response.status === 403, "Status should be 401 or 403");
+  });
+%}
