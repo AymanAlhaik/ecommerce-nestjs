@@ -1,0 +1,292 @@
+// **** Tax API Tests (Admin-Only Singleton) ****
+// Set your baseUrl & tokens in WebStorm's REST Client environment variables
+// Example: baseUrl = http://localhost:3000/api
+
+@userToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDllYzU4MTllODUyMjM3MjIyOSIsImVtYWlsIjoidXNlcjJAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4ODksImV4cCI6MTc2MzM5Njg4OX0.5F7hipcPdebeE7LPy2upJdgpFE2vMWXvF5NF-T9EV1M
+@adminToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzE4MDk0NiwiZXhwIjoxNzYzMzk2OTQ2fQ.xrZKA3xGjrWaDCeQ0HGP6gk8t2DghwGGSBHjIKsQgMo
+### @name loginAdmin
+# @docs Login as Admin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin123"
+}
+
+> {%
+  client.test("Admin login", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.global.set("adminToken", response.body.token);
+  });
+%}
+
+### @name loginUser
+# @docs Login as User (for permission tests)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+
+> {%
+  client.test("User login", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.global.set("userToken", response.body.token);
+  });
+%}
+
+### @name adminCreateOrUpdateTax
+# @docs Admin Create/Update Tax Values (201)
+POST {{baseUrl}}/taxs
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "taxPrice": 15.5,
+  "shippingPrice": 25.0
+}
+
+> {%
+  client.test("Admin create/update tax - success", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.assert(response.body.data.taxPrice === 15.5, "Tax price should be 15.5");
+    client.assert(response.body.data.shippingPrice === 25.0, "Shipping price should be 25.0");
+  });
+%}
+
+### @name adminUpdateTaxPartial
+# @docs Admin Partial Update - Only Tax Price (201)
+POST {{baseUrl}}/taxs
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "taxPrice": 18.0
+}
+
+> {%
+  client.test("Admin partial update tax - success", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.assert(response.body.data.taxPrice === 18.0, "Tax price updated to 18.0");
+    client.assert(response.body.data.shippingPrice === 25.0, "Shipping price remains 25.0");
+  });
+%}
+
+### @name adminUpdateShippingOnly
+# @docs Admin Partial Update - Only Shipping (201)
+POST {{baseUrl}}/taxs
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "shippingPrice": 30.5
+}
+
+> {%
+  client.test("Admin update shipping only - success", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.assert(response.body.data.taxPrice === 18.0, "Tax price remains 18.0");
+    client.assert(response.body.data.shippingPrice === 30.5, "Shipping updated to 30.5");
+  });
+%}
+
+### @name adminFindTax
+# @docs Admin Retrieve Tax Values (200)
+GET {{baseUrl}}/taxs
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Admin find tax - success", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.data.taxPrice !== undefined, "Should have taxPrice");
+    client.assert(response.body.data.shippingPrice !== undefined, "Should have shippingPrice");
+  });
+%}
+
+### @name publicCannotFindTax
+# @docs Public Cannot Retrieve Tax Values (401)
+GET {{baseUrl}}/taxs
+// No Authorization header
+
+> {%
+  client.test("Public cannot find tax - unauthorized", function() {
+    client.assert(response.status === 401, "Status should be 401 Unauthorized");
+  });
+%}
+
+### @name userCannotFindTax
+# @docs User Cannot Retrieve Tax Values (403)
+GET {{baseUrl}}/taxs
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("User cannot find tax - forbidden", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+  });
+%}
+
+### @name adminResetTax
+# @docs Admin Reset Tax Values to 0 (204)
+DELETE {{baseUrl}}/taxs
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Admin reset tax - success", function() {
+    client.assert(response.status === 204, "Status should be 204 No Content");
+  });
+%}
+
+### @name verifyReset
+# @docs Verify Reset Values (200)
+GET {{baseUrl}}/taxs
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Verify reset values", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.data.taxPrice === 0, "Tax price should be 0");
+    client.assert(response.body.data.shippingPrice === 0, "Shipping price should be 0");
+  });
+%}
+
+### @name adminSetZeroExplicitly
+# @docs Admin Can Set Zero Values Explicitly (201)
+POST {{baseUrl}}/taxs
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "taxPrice": 0,
+  "shippingPrice": 0
+}
+
+> {%
+  client.test("Set zero values explicitly - success", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.assert(response.body.data.taxPrice === 0, "Tax price should be 0");
+    client.assert(response.body.data.shippingPrice === 0, "Shipping price should be 0");
+  });
+%}
+
+### @name userCannotCreateOrUpdate
+# @docs User Cannot Create/Update Tax (403)
+POST {{baseUrl}}/taxs
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+  "taxPrice": 10,
+  "shippingPrice": 20
+}
+
+> {%
+  client.test("User cannot create/update tax - forbidden", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+  });
+%}
+
+### @name userCannotReset
+# @docs User Cannot Reset Tax (403)
+DELETE {{baseUrl}}/taxs
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("User cannot reset tax - forbidden", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+  });
+%}
+
+### @name unauthorizedCreate
+# @docs Unauthorized Create/Update Tax (401)
+POST {{baseUrl}}/taxs
+Content-Type: application/json
+// No Authorization header
+
+{
+  "taxPrice": 15,
+  "shippingPrice": 25
+}
+
+> {%
+  client.test("Unauthorized create/update - 401", function() {
+    client.assert(response.status === 401, "Status should be 401 Unauthorized");
+  });
+%}
+
+### @name unauthorizedReset
+# @docs Unauthorized Reset Tax (401)
+DELETE {{baseUrl}}/taxs
+// No Authorization header
+
+> {%
+  client.test("Unauthorized reset - 401", function() {
+    client.assert(response.status === 401, "Status should be 401 Unauthorized");
+  });
+%}
+
+### @name adminCreateWithNegativeValues
+# @docs Admin Cannot Create with Negative Values (400)
+POST {{baseUrl}}/taxs
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "taxPrice": -5,
+  "shippingPrice": -10
+}
+
+> {%
+  client.test("Create with negative values - bad request", function() {
+    client.assert(response.status === 400, "Status should be 400 Bad Request");
+  });
+%}
+
+### @name adminCreateOmitOptionalFields
+# @docs Admin Can Omit Optional Fields (201)
+POST {{baseUrl}}/taxs
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{}
+
+> {%
+  client.test("Create with omitted fields - uses defaults", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.assert(response.body.data.taxPrice === 0, "Tax price defaults to 0");
+    client.assert(response.body.data.shippingPrice === 0, "Shipping price defaults to 0");
+  });
+%}
+
+### @name adminCreateWithInvalidData
+# @docs Admin Cannot Create with Invalid Data (400)
+POST {{baseUrl}}/taxs
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "taxPrice": "invalid",
+  "shippingPrice": true
+}
+
+> {%
+  client.test("Create with invalid data - bad request", function() {
+    client.assert(response.status === 400, "Status should be 400 Bad Request");
+  });
+%}
+
+### @name adminFindWhenNoneExists
+# @docs Admin Find When No Document Exists - Creates Default (200)
+# This test requires manually deleting the tax document from database first
+GET {{baseUrl}}/taxs
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Admin find when none exists - creates default", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.data.taxPrice === 0, "Default tax price should be 0");
+    client.assert(response.body.data.shippingPrice === 0, "Default shipping price should be 0");
+  });
+%}
