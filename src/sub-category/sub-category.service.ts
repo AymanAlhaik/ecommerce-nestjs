@@ -19,10 +19,10 @@ export class SubCategoryService {
   ) {}
 
   async create(createSubCategoryDto: CreateSubCategoryDto) {
-    const existing = await this.subCategoryModel.findOne({
+    const isSubCateExists = await this.subCategoryModel.findOne({
       name: createSubCategoryDto.name,
     });
-    if (existing) {
+    if (isSubCateExists) {
       throw new BadRequestException(
         'Sub-category with this name already exists',
       );

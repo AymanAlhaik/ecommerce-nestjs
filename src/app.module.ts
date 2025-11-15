@@ -8,6 +8,7 @@ import * as process from 'node:process';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { CategoryModule } from './category/category.module';
 import { SubCategoryModule } from './sub-category/sub-category.module';
+import { BrandModule } from './brand/brand.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SubCategoryModule } from './sub-category/sub-category.module';
     AuthModule,
     CategoryModule,
     SubCategoryModule,
+    BrandModule,
   ],
   controllers: [],
   providers: [],

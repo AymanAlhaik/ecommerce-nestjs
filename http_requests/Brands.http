@@ -1,0 +1,172 @@
+// **** Brand API Tests ****
+// Set your baseUrl in WebStorm's REST Client environment variables
+// Example: baseUrl = http://localhost:3000/api
+
+@authToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzE2NzUzOSwiZXhwIjoxNzYzMzgzNTM5fQ.PiL62PHooumRE4ugJ6CfO3Mcx__nNuqC7Daedo1c43M
+@brandId=6917cd887c1d2f57dfb0bd03
+@anotherBrandId=6917cfc4ece4a6df30b9ef46
+
+### @name createBrand
+# @docs Create Brand - Success
+POST {{baseUrl}}/brands
+Content-Type: application/json
+Authorization: Bearer {{authToken}} // Uncomment when auth is implemented
+
+{
+  "name": "Test Brand",
+  "image": "https://example.com/brand-logo.jpg"
+}
+
+> {%
+  client.test("Create brand - success", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.global.set("brandId", response.body._id);
+  });
+%}
+
+### @name createBrandDuplicate
+# @docs Create Brand - Duplicate Name (Should return 409 Conflict)
+POST {{baseUrl}}/brands
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Test Brand",
+  "image": "https://example.com/another-image.jpg"
+}
+
+> {%
+  client.test("Create brand - duplicate name", function() {
+    client.assert(response.status === 409, "Status should be 409 Conflict");
+  });
+%}
+
+### @name createBrandInvalid
+# @docs Create Brand - Invalid Data (Should return 400 Bad Request)
+POST {{baseUrl}}/brands
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "ab"
+}
+
+> {%
+  client.test("Create brand - invalid data", function() {
+    client.assert(response.status === 400, "Status should be 400 Bad Request");
+  });
+%}
+
+### @name getAllBrands
+# @docs Get All Brands - Public Access
+GET {{baseUrl}}/brands
+
+> {%
+  client.test("Get all brands", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(Array.isArray(response.body), "Response should be an array");
+  });
+%}
+
+### @name getBrandById
+# @docs Get Single Brand - Success
+GET {{baseUrl}}/brands/{{brandId}}
+
+> {%
+  client.test("Get brand by ID - success", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body._id === client.global.get("brandId"), "ID should match");
+  });
+%}
+
+### @name getBrandNotFound
+# @docs Get Single Brand - Not Found (Should return 404)
+GET {{baseUrl}}/brands/507f1f77bcf86cd799439011
+
+> {%
+  client.test("Get brand - not found", function() {
+    client.assert(response.status === 404, "Status should be 404 Not Found");
+  });
+%}
+
+### @name updateBrand
+# @docs Update Brand - Success
+PATCH {{baseUrl}}/brands/{{brandId}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Updated Brand Name",
+  "image": "https://example.com/updated-logo.jpg"
+}
+
+> {%
+  client.test("Update brand - success", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.name === "Updated Brand Name", "Name should be updated");
+  });
+%}
+
+### @name updateBrandDuplicate
+# @docs Update Brand - Duplicate Name (Should return 409 Conflict)
+# First create another brand to test duplicate
+POST {{baseUrl}}/brands
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Another Brand"
+}
+
+> {%
+  client.test("Pre-create brand for duplicate test", function() {
+    client.global.set("anotherBrandId", response.body._id);
+  });
+%}
+###
+PATCH {{baseUrl}}/brands/{{brandId}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Another Brand"
+}
+
+> {%
+ client.test("Update brand - duplicate name", function() {
+   client.assert(response.status === 409, "Status should be 409 Conflict");
+ });
+%}
+
+### @name deleteBrand
+# @docs Delete Brand - Success
+DELETE {{baseUrl}}/brands/{{brandId}}
+Authorization: Bearer {{authToken}}
+
+> {%
+  client.test("Delete brand - success", function() {
+    client.assert(response.status === 204, "Status should be 204 No Content");
+  });
+%}
+
+### @name deleteBrandNotFound
+# @docs Delete Brand - Not Found (Should return 404)
+DELETE {{baseUrl}}/brands/507f1f77bcf86cd799439011
+Authorization: Bearer {{authToken}}
+
+> {%
+  client.test("Delete brand - not found", function() {
+    client.assert(response.status === 404, "Status should be 404 Not Found");
+  });
+%}
+
+### @name cleanup
+# @docs Cleanup - Delete test data
+DELETE {{baseUrl}}/brands/{{anotherBrandId}}
+Authorization: Bearer {{authToken}}
+
+> {%
+  client.test("Cleanup test data", function() {
+    client.assert(response.status === 204, "Cleanup should succeed");
+  });
+%}

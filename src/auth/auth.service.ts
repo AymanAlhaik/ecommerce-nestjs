@@ -80,7 +80,7 @@ export class AuthService {
       email: user.email,
       role: user.role,
     };
-    const { password, __v, ...safeUser } = user.toObject();
+    const { password, __v, verificationCode, address, gender, phoneNumber, age, ...safeUser} = user.toObject();
     const token = await this.jwtService.signAsync(payload);
 
     const expiresIn = 60 * 60; //1h
