@@ -11,6 +11,7 @@ import { SubCategoryModule } from './sub-category/sub-category.module';
 import { BrandModule } from './brand/brand.module';
 import { CouponModule } from './coupon/coupon.module';
 import { SupplierModule } from './supplier/supplier.module';
+import { RequestProductModule } from './request-product/request-product.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { SupplierModule } from './supplier/supplier.module';
     BrandModule,
     CouponModule,
     SupplierModule,
+    RequestProductModule,
   ],
   controllers: [],
   providers: [],

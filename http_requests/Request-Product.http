@@ -1,0 +1,378 @@
+// **** RequestProduct API Tests (Role-Based Access) ****
+// Set your baseUrl & tokens in WebStorm's REST Client environment variables
+// Example: baseUrl = http://localhost:3000/api
+
+@user1Token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDcwYzU4MTllODUyMjM3MjIyNSIsImVtYWlsIjoidXNlcjFAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4MzEsImV4cCI6MTc2MzM5NjgzMX0.Gde51iGL1M5LtLmoH3BHDB9NdB_sr4tF78m8KjhaWqo
+@user1Id=69180070c5819e8522372225
+@user2Token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDllYzU4MTllODUyMjM3MjIyOSIsImVtYWlsIjoidXNlcjJAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4ODksImV4cCI6MTc2MzM5Njg4OX0.5F7hipcPdebeE7LPy2upJdgpFE2vMWXvF5NF-T9EV1M
+@user2Id=6918009ec5819e8522372229
+@adminToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzE4MDk0NiwiZXhwIjoxNzYzMzk2OTQ2fQ.xrZKA3xGjrWaDCeQ0HGP6gk8t2DghwGGSBHjIKsQgMo
+
+### @name loginUser1
+# @docs Login as User 1 (Regular User)
+POST {{baseUrl}}/auth/sign-in
+Content-Type: application/json
+
+{
+  "email": "user1@gmail.com",
+  "password": "user1234"
+}
+
+> {%
+  client.test("Login as User 1", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.global.set("user1Token", response.body.token);
+    client.global.set("user1Id", response.body.user.id);
+  });
+%}
+
+### @name loginUser2
+# @docs Login as User 2 (Regular User) - For permission tests
+POST {{baseUrl}}/auth/sign-in
+Content-Type: application/json
+
+{
+  "email": "user2@gmail.com",
+  "password": "user1234"
+}
+
+> {%
+  client.test("Login as User 2", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.global.set("user2Token", response.body.token);
+    client.global.set("user2Id", response.body.user.id);
+  });
+%}
+
+### @name loginAdmin
+# @docs Login as Admin
+POST {{baseUrl}}/auth/sign-in
+Content-Type: application/json
+
+{
+  "email": "AymanAlhaikg@gmail.com",
+  "password": "aim0938"
+}
+
+> {%
+  client.test("Login as Admin", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.global.set("adminToken", response.body.token);
+  });
+%}
+
+### @name userCreatesRequest
+# @docs User Can Create Product Request (201)
+POST {{baseUrl}}/request-products
+Content-Type: application/json
+Authorization: Bearer {{user1Token}}
+
+{
+  "titleNeed": "Wireless Gaming Mouse",
+  "details": "Need a high-precision wireless gaming mouse with RGB lighting",
+  "quantity": 10,
+  "category": "Electronics"
+}
+
+> {%
+  client.test("User creates request - success", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.assert(response.body.status === 201, "Response status should be 201");
+    client.assert(response.body.message === "success", "Message should be 'success'");
+    client.assert(response.body.data.titleNeed === "Wireless Gaming Mouse", "Title should match");
+    client.global.set("user1RequestId", response.body.data._id);
+  });
+%}
+
+### @name userCreatesDuplicateRequest
+# @docs User Cannot Create Duplicate Title (409)
+POST {{baseUrl}}/request-products
+Content-Type: application/json
+Authorization: Bearer {{user1Token}}
+
+{
+  "titleNeed": "Wireless Gaming Mouse",
+  "details": "Different details but same title",
+  "quantity": 5,
+  "category": "Electronics"
+}
+
+> {%
+  client.test("User creates duplicate - conflict", function() {
+    client.assert(response.status === 409, "Status should be 409 Conflict");
+  });
+%}
+
+### @name userCreatesInvalidRequest
+# @docs User Cannot Create Invalid Request (400)
+POST {{baseUrl}}/request-products
+Content-Type: application/json
+Authorization: Bearer {{user1Token}}
+
+{
+  "titleNeed": "ab",
+  "details": "short",
+  "quantity": 0,
+  "category": "Test"
+}
+
+> {%
+  client.test("User creates invalid request - bad request", function() {
+    client.assert(response.status === 400, "Status should be 400 Bad Request");
+  });
+%}
+
+### @name userGetsOwnRequests
+# @docs User Can Get Their Own Requests (200)
+GET {{baseUrl}}/request-products/my/my-requests?page=1&limit=10
+Authorization: Bearer {{user1Token}}
+
+> {%
+  client.test("User gets own requests - success", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.status === 200, "Response status should be 200");
+    client.assert(Array.isArray(response.body.data), "Data should be an array");
+    client.assert(response.body.pagination !== undefined, "Should have pagination");
+    client.assert(response.body.data.length >= 1, "Should have at least 1 request");
+  });
+%}
+
+### @name userUpdatesOwnRequest
+# @docs User Can Update Their Own Request (200)
+PATCH {{baseUrl}}/request-products/{{user1RequestId}}
+Content-Type: application/json
+Authorization: Bearer {{user1Token}}
+
+{
+  "details": "Updated: Need a high-precision wireless gaming mouse with RGB and programmable buttons",
+  "quantity": 15
+}
+
+> {%
+  client.test("User updates own request - success", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.status === 200, "Response status should be 200");
+    client.assert(response.body.data.quantity === 15, "Quantity should be updated");
+  });
+%}
+
+### @name userDeletesOwnRequest
+# @docs User Can Delete Their Own Request (204)
+# Recreate it first for this test
+POST {{baseUrl}}/request-products
+Content-Type: application/json
+Authorization: Bearer {{user1Token}}
+
+{
+  "titleNeed": "To Be Deleted",
+  "details": "This request will be deleted by the owner",
+  "quantity": 1,
+  "category": "Test"
+}
+
+> {%
+  client.test("Recreate request for deletion", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.global.set("requestToDeleteId", response.body.data._id);
+  });
+%}
+###
+DELETE {{baseUrl}}/request-products/{{requestToDeleteId}}
+Authorization: Bearer {{user1Token}}
+
+> {%
+ client.test("User deletes own request - success", function() {
+   client.assert(response.status === 204, "Status should be 204 No Content");
+ });
+%}
+
+### @name userCannotAccessAdminEndpoints
+# @docs User Cannot Access Admin Endpoints (403)
+GET {{baseUrl}}/request-products
+Authorization: Bearer {{user1Token}}
+
+> {%
+  client.test("User cannot access admin get all - forbidden", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+  });
+%}
+
+GET {{baseUrl}}/request-products/{{user1RequestId}}
+Authorization: Bearer {{user1Token}}
+
+> {%
+ client.test("User cannot access admin get one - forbidden", function() {
+   client.assert(response.status === 403, "Status should be 403 Forbidden");
+ });
+%}
+
+### @name user2CannotModifyUser1Request
+# @docs User 2 Cannot Modify User 1's Request (403)
+PATCH {{baseUrl}}/request-products/{{user1RequestId}}
+Content-Type: application/json
+Authorization: Bearer {{user2Token}}
+
+{
+  "quantity": 999
+}
+
+> {%
+  client.test("User 2 cannot modify user 1's request - forbidden", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+    client.assert(response.body.message === "You can only update your own requests", "Should have permission error message");
+  });
+%}
+###
+DELETE {{baseUrl}}/request-products/{{user1RequestId}}
+Authorization: Bearer {{user2Token}}
+
+> {%
+ client.test("User 2 cannot delete user 1's request - forbidden", function() {
+   client.assert(response.status === 403, "Status should be 403 Forbidden");
+   client.assert(response.body.message === "You can only delete your own requests", "Should have permission error message");
+ });
+%}
+
+### @name adminCannotAccessUserEndpoints
+# @docs Admin Cannot Access User-Specific Endpoints (403)
+POST {{baseUrl}}/request-products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "titleNeed": "Admin Trying to Create",
+  "details": "Admin should not use user routes",
+  "quantity": 1,
+  "category": "Test"
+}
+
+> {%
+  client.test("Admin cannot access user create endpoint - forbidden", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+  });
+%}
+###
+GET {{baseUrl}}/request-products/my/my-requests
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Admin cannot access user my-requests endpoint - forbidden", function() {
+   client.assert(response.status === 403, "Status should be 403 Forbidden");
+ });
+%}
+###
+PATCH {{baseUrl}}/request-products/{{user1RequestId}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "quantity": 100
+}
+
+> {%
+ client.test("Admin cannot access user update endpoint - forbidden", function() {
+   client.assert(response.status === 403, "Status should be 403 Forbidden");
+ });
+%}
+
+### @name adminGetsAllRequests
+# @docs Admin Can Get All Requests (200)
+GET {{baseUrl}}/request-products?page=1&limit=10
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Admin gets all requests - success", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.status === 200, "Response status should be 200");
+    client.assert(Array.isArray(response.body.data), "Data should be an array");
+    client.assert(response.body.pagination !== undefined, "Should have pagination");
+    client.assert(response.body.data.length >= 1, "Should have at least 1 request");
+  });
+%}
+
+### @name adminGetsOneRequest
+# @docs Admin Can Get Single Request (200)
+GET {{baseUrl}}/request-products/{{user1RequestId}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Admin gets single request - success", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.status === 200, "Response status should be 200");
+    client.assert(response.body.data._id === client.global.get("user1RequestId"), "ID should match");
+    client.assert(response.body.data.user !== undefined, "Should populate user data");
+  });
+%}
+
+### @name adminGetsRequestNotFound
+# @docs Admin Gets 404 for Invalid ID (404)
+GET {{baseUrl}}/request-products/507f1f77bcf86cd799439011
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Admin gets request not found - 404", function() {
+    client.assert(response.status === 404, "Status should be 404 Not Found");
+    client.assert(response.body.message === "RequestProduct with ID \"507f1f77bcf86cd799439011\" not found", "Should have not found message");
+  });
+%}
+
+### @name unauthorizedAccess
+# @docs Unauthorized Access to Protected Endpoints (401)
+GET {{baseUrl}}/request-products/my/my-requests
+// No Authorization header
+
+> {%
+  client.test("Unauthorized access to user endpoints - 401", function() {
+    client.assert(response.status === 401, "Status should be 401 Unauthorized");
+  });
+%}
+###
+POST {{baseUrl}}/request-products
+Content-Type: application/json
+// No Authorization header
+
+{
+  "titleNeed": "Unauthorized Request",
+  "details": "Should not work without token",
+  "quantity": 1,
+  "category": "Test"
+}
+
+> {%
+ client.test("Unauthorized create request - 401", function() {
+   client.assert(response.status === 401, "Status should be 401 Unauthorized");
+ });
+%}
+
+### @name cleanupUser1Requests
+# @docs Cleanup User 1's Remaining Requests
+GET {{baseUrl}}/request-products/my/my-requests?page=1&limit=50
+Authorization: Bearer {{user1Token}}
+
+> {%
+  client.test("Get all user 1 requests for cleanup", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    if (response.body.data.length > 0) {
+      client.global.set("cleanupRequests", response.body.data);
+    }
+  });
+%}
+###
+// Dynamic cleanup - delete all remaining requests
+DELETE {{baseUrl}}/request-products/{{cleanupRequests[0]._id}}
+Authorization: Bearer {{user1Token}}
+
+> {%
+ client.test("Cleanup first remaining request", function() {
+   client.assert(response.status === 204, "Status should be 204 No Content");
+ });
+%}
+###
+DELETE {{baseUrl}}/request-products/{{cleanupRequests[1]._id}}
+Authorization: Bearer {{user1Token}}
+
+> {%
+ client.test("Cleanup second remaining request", function() {
+   client.assert(response.status === 204, "Status should be 204 No Content");
+ });
+%}
