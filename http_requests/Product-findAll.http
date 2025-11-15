@@ -1,0 +1,526 @@
+// **** Product Advanced Query Tests Suite ****
+// Create diverse products and test all query operations
+// Set your baseUrl & admin token in WebStorm's REST Client environment variables
+
+
+@userToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDllYzU4MTllODUyMjM3MjIyOSIsImVtYWlsIjoidXNlcjJAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4ODksImV4cCI6MTc2MzM5Njg4OX0.5F7hipcPdebeE7LPy2upJdgpFE2vMWXvF5NF-T9EV1M
+@adminToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzE4MDk0NiwiZXhwIjoxNzYzMzk2OTQ2fQ.xrZKA3xGjrWaDCeQ0HGP6gk8t2DghwGGSBHjIKsQgMo
+@productId=691837319a3ca179c703f6d3
+@productId2=691837d89a3ca179c703f6d7
+### @name setupCreateDiverseProducts
+# @docs Create 8 products with different properties for testing
+
+# Product 1: Budget Gaming Mouse
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Budget Gaming Mouse",
+  "description": "Affordable wired gaming mouse with 6 buttons and RGB lighting for casual gamers",
+  "quantity": 200,
+  "imageCover": "https://example.com/mouse-budget.jpg",
+  "images": ["https://example.com/mouse-1.jpg", "https://example.com/mouse-2.jpg"],
+  "price": 29.99,
+  "sold": 150,
+  "color": ["Black", "White"],
+  "category": "656eaa7a8f1a2b3c4d5e6f7a",
+  "brand": "656eaa7a8f1a2b3c4d5e6f7c"
+}
+
+###
+//Product 2: Premium Gaming Laptop
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Premium Gaming Laptop RTX 4090",
+  "description": "Ultra-high-end gaming laptop with NVIDIA RTX 4090, Intel i9-13900HX, 32GB RAM, and 2TB NVMe SSD for professional esports",
+  "quantity": 15,
+  "imageCover": "https://example.com/laptop-premium.jpg",
+  "price": 3499.99,
+  "sold": 8,
+  "color": ["Black", "Silver"],
+  "category": "656eaa7a8f1a2b3c4d5e6f7a",
+  "brand": "656eaa7a8f1a2b3c4d5e6f7d"
+}
+
+###
+# Product 3: Mid-Range Headset
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Wireless Gaming Headset Pro",
+  "description": "Professional wireless gaming headset with 7.1 surround sound, noise cancellation, and 40-hour battery life",
+  "quantity": 75,
+  "imageCover": "https://example.com/headset-pro.jpg",
+  "price": 149.99,
+  "priceAfterDiscount": 129.99,
+  "sold": 45,
+  "color": ["Black", "Blue"],
+  "category": "656eaa7a8f1a2b3c4d5e6f7a",
+  "brand": "656eaa7a8f1a2b3c4d5e6f7e"
+}
+
+###
+# Product 4: Budget Keyboard
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Mechanical Keyboard Budget",
+  "description": "Entry-level mechanical keyboard with blue switches and white backlighting for budget-conscious gamers",
+  "quantity": 300,
+  "imageCover": "https://example.com/keyboard-budget.jpg",
+  "price": 59.99,
+  "sold": 180,
+  "color": ["Black"],
+  "category": "656eaa7a8f1a2b3c4d5e6f7a",
+  "brand": "656eaa7a8f1a2b3c4d5e6f7c"
+}
+
+
+###
+# Product 5: Premium Monitor
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "4K Gaming Monitor 144Hz",
+  "description": "Ultra HD 4K gaming monitor with 144Hz refresh rate, HDR 1000, and 1ms response time for competitive gaming",
+  "quantity": 30,
+  "imageCover": "https://example.com/monitor-4k.jpg",
+  "price": 899.99,
+  "priceAfterDiscount": 799.99,
+  "sold": 25,
+  "color": ["Black"],
+  "category": "656eaa7a8f1a2b3c4d5e6f7a",
+  "brand": "656eaa7a8f1a2b3c4d5e6f7d"
+}
+
+###
+# Product 6: High-Sold Budget Item
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Gaming Mouse Pad XXL",
+  "description": "Extra large gaming mouse pad with water-resistant surface and non-slip rubber base for precision gaming",
+  "quantity": 500,
+  "imageCover": "https://example.com/mousepad.jpg",
+  "price": 24.99,
+  "sold": 450,
+  "color": ["Red", "Blue"],
+  "category": "656eaa7a8f1a2b3c4d5e6f7a",
+  "brand": "656eaa7a8f1a2b3c4d5e6f7e"
+}
+
+###
+# Product 7: Low Rating Product
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Basic Webcam HD",
+  "description": "Budget HD webcam with 720p resolution and built-in microphone for basic video conferencing needs",
+  "quantity": 100,
+  "imageCover": "https://example.com/webcam.jpg",
+  "price": 34.99,
+  "sold": 60,
+  "color": ["Black"],
+  "category": "656eaa7a8f1a2b3c4d5e6f7a",
+  "brand": "656eaa7a8f1a2b3c4d5e6f7c"
+}
+
+###
+# Product 8: No Discount Product
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "USB-C Hub 7-in-1",
+  "description": "Multi-port USB-C hub with 7 ports including HDMI, USB 3.0, SD card reader, and power delivery for laptops",
+  "quantity": 80,
+  "imageCover": "https://example.com/hub.jpg",
+  "price": 49.99,
+  "sold": 35,
+  "color": ["Silver"],
+  "category": "656eaa7a8f1a2b3c4d5e6f7a",
+  "brand": "656eaa7a8f1a2b3c4d5e6f7e"
+}
+
+
+### @name testPriceRangeFilters
+# @docs Test Various Price Ranges
+
+# Test 1: Budget products (price < 50)
+GET {{baseUrl}}/products?price[lte]=50&page=1&limit=1
+Authorization: Bearer {{userToken}}
+
+
+###
+# Test 2: Mid-range products (50-200)
+GET {{baseUrl}}/products?price[gte]=50&price[lte]=200
+Authorization: Bearer {{userToken}}
+
+###
+# Test 3: Premium products (price > 500)
+GET {{baseUrl}}/products?price[gte]=500
+Authorization: Bearer {{userToken}}
+
+###
+# Test 4: Exact price point
+GET {{baseUrl}}/products?price[gte]=149.99&price[lte]=149.99
+Authorization: Bearer {{userToken}}
+
+
+### @name testSoldQuantityFilters
+# @docs Test Sold Quantity Ranges
+
+# Test 1: High-selling products (> 100)
+GET {{baseUrl}}/products?sold[gte]=100
+Authorization: Bearer {{userToken}}
+
+###
+# Test 2: Medium-selling products (20-100)
+GET {{baseUrl}}/products?sold[gte]=20&sold[lte]=100
+Authorization: Bearer {{userToken}}
+
+
+### @name testRatingFilters
+# @docs Test Rating Ranges
+
+# Test 1: Top-rated products (>= 4.5)
+GET {{baseUrl}}/products?ratingsAverage[gte]=4.5
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Rating filter: >= 4.5 (Top rated)", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    response.body.data.forEach(p => {
+      client.assert(p.ratingsAverage >= 4.5, `${p.title}: rating ${p.ratingsAverage} >= 4.5`);
+    });
+  });
+%}
+
+# Test 2: Mid-rated products (3.0-4.5)
+GET {{baseUrl}}/products?ratingsAverage[gte]=3.0&ratingsAverage[lte]=4.5
+Authorization: Bearer {{userToken}}
+
+> {%
+ client.test("Rating filter: 3.0-4.5 (Mid rated)", function() {
+   client.assert(response.status === 200, "Status should be 200");
+   response.body.data.forEach(p => {
+     client.assert(p.ratingsAverage >= 3.0 && p.ratingsAverage <= 4.5,
+                   `${p.title}: rating ${p.ratingsAverage} in range`);
+   });
+ });
+%}
+
+# Test 3: Low-rated products (< 3.0)
+GET {{baseUrl}}/products?ratingsAverage[lte]=3.0
+Authorization: Bearer {{userToken}}
+
+> {%
+ client.test("Rating filter: <= 3.0 (Low rated)", function() {
+   client.assert(response.status === 200, "Status should be 200");
+   response.body.data.forEach(p => {
+     client.assert(p.ratingsAverage <= 3.0, `${p.title}: rating ${p.ratingsAverage} <= 3.0`);
+   });
+ });
+%}
+
+### @name testKeywordSearch
+# @docs Test Keyword Search
+
+# Test 1: Search for "gaming"
+GET {{baseUrl}}/products?keyword=gaming
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Keyword search: 'gaming'", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    response.body.data.forEach(p => {
+      const hasKeyword = p.title.toLowerCase().includes('gaming') ||
+        p.description.toLowerCase().includes('gaming');
+      client.assert(hasKeyword, `${p.title}: contains 'gaming'`);
+    });
+  });
+%}
+
+###
+# Test 2: Search for "wireless"
+GET {{baseUrl}}/products?keyword=wireless
+Authorization: Bearer {{userToken}}
+
+> {%
+ client.test("Keyword search: 'wireless'", function() {
+   client.assert(response.status === 200, "Status should be 200");
+   // Should find at least headset and mouse
+   client.assert(response.body.data.length >= 1, "Found wireless products");
+ });
+%}
+
+###
+# Test 3: Search for "budget"
+GET {{baseUrl}}/products?keyword=budget
+Authorization: Bearer {{userToken}}
+
+> {%
+ client.test("Keyword search: 'budget'", function() {
+   client.assert(response.status === 200, "Status should be 200");
+   response.body.data.forEach(p => {
+     const hasKeyword = p.title.toLowerCase().includes('budget') ||
+                       p.description.toLowerCase().includes('budget');
+     client.assert(hasKeyword, `${p.title}: contains 'budget'`);
+   });
+ });
+%}
+
+### @name testSorting
+# @docs Test Sorting Operations
+
+# Test 1: Sort by price ascending
+GET {{baseUrl}}/products?sort=price
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Sort: price ascending", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    for (let i = 0; i < response.body.data.length - 1; i++) {
+      client.assert(response.body.data[i].price <= response.body.data[i + 1].price,
+        `Price sorted ascending: ${response.body.data[i].price} <= ${response.body.data[i + 1].price}`);
+    }
+  });
+%}
+
+###
+# Test 2: Sort by price descending
+GET {{baseUrl}}/products?sort=-price
+Authorization: Bearer {{userToken}}
+
+> {%
+ client.test("Sort: price descending", function() {
+   client.assert(response.status === 200, "Status should be 200");
+   for (let i = 0; i < response.body.data.length - 1; i++) {
+     client.assert(response.body.data[i].price >= response.body.data[i + 1].price,
+                   `Price sorted descending: ${response.body.data[i].price} >= ${response.body.data[i + 1].price}`);
+   }
+ });
+%}
+
+###
+# Test 3: Sort by sold quantity descending
+GET {{baseUrl}}/products?sort=-sold
+Authorization: Bearer {{userToken}}
+
+> {%
+ client.test("Sort: sold descending", function() {
+   client.assert(response.status === 200, "Status should be 200");
+   for (let i = 0; i < response.body.data.length - 1; i++) {
+     client.assert(response.body.data[i].sold >= response.body.data[i + 1].sold,
+                   `Sold sorted descending: ${response.body.data[i].sold} >= ${response.body.data[i + 1].sold}`);
+   }
+ });
+%}
+
+###
+# Test 4: Sort by ratings descending
+GET {{baseUrl}}/products?sort=-ratingsAverage
+Authorization: Bearer {{userToken}}
+
+> {%
+ client.test("Sort: ratings descending", function() {
+   client.assert(response.status === 200, "Status should be 200");
+   for (let i = 0; i < response.body.data.length - 1; i++) {
+     client.assert(response.body.data[i].ratingsAverage >= response.body.data[i + 1].ratingsAverage,
+                   `Ratings sorted descending: ${response.body.data[i].ratingsAverage} >= ${response.body.data[i + 1].ratingsAverage}`);
+   }
+ });
+%}
+
+###
+# Test 5: Multi-field sort: price asc, then rating desc
+GET {{baseUrl}}/products?sort=price,-ratingsAverage
+Authorization: Bearer {{userToken}}
+
+> {%
+ client.test("Sort: multi-field (price asc, rating desc)", function() {
+   client.assert(response.status === 200, "Status should be 200");
+   const products = response.body.data;
+   for (let i = 0; i < products.length - 1; i++) {
+     if (products[i].price === products[i + 1].price) {
+       client.assert(products[i].ratingsAverage >= products[i + 1].ratingsAverage,
+                     `Secondary sort works for identical prices`);
+     }
+   }
+ });
+%}
+
+### @name testFieldSelection
+# @docs Test Field Selection
+
+# Test 1: Select only title, price, sold
+GET {{baseUrl}}/products?fields=title,price,sold
+Authorization: Bearer {{userToken}}
+
+
+###
+# Test 2: Select only title and description
+GET {{baseUrl}}/products?fields=title,description
+Authorization: Bearer {{userToken}}
+
+### @name testPagination
+# @docs Test Pagination
+
+# Test 1: First page, 3 items
+GET {{baseUrl}}/products?page=1&limit=3
+Authorization: Bearer {{userToken}}
+
+###
+# Test 2: Second page, 3 items
+GET {{baseUrl}}/products?page=2&limit=3
+Authorization: Bearer {{userToken}}
+
+###
+# Test 3: Invalid page defaults to 1
+GET {{baseUrl}}/products?page=-5&limit=10
+Authorization: Bearer {{userToken}}
+
+
+###
+# Test 4: Invalid limit defaults to 10
+GET {{baseUrl}}/products?page=1&limit=abc
+Authorization: Bearer {{userToken}}
+
+
+### @name testCombinedQueries
+# @docs Test Combined Filters
+
+###
+# Test 1: Price range + Rating + Sort
+GET {{baseUrl}}/products?price[gte]=50&price[lte]=200&sort=-sold
+Authorization: Bearer {{userToken}}
+
+###
+# Test 2: Category + Keyword + Rating
+GET {{baseUrl}}/products?category=656eaa7a8f1a2b3c4d5e6f7a&keyword=gaming
+Authorization: Bearer {{userToken}}
+
+###
+# Test 3: Complex multi-filter
+GET {{baseUrl}}/products?price[gte]=20&price[lte]=150&sold[gte]=30&sort=price&fields=title,price,sold
+Authorization: Bearer {{userToken}}
+
+### @name testEdgeCases
+# @docs Test Edge Cases
+
+# Test 1: No results (impossible filter)
+GET {{baseUrl}}/products?price[gte]=10000&price[lte]=20000
+Authorization: Bearer {{userToken}}
+
+###
+# Test 2: Empty keyword search (should return all)
+GET {{baseUrl}}/products?keyword=
+Authorization: Bearer {{userToken}}
+
+
+###
+# Test 3: Very high page number
+GET {{baseUrl}}/products?page=999&limit=10
+Authorization: Bearer {{userToken}}
+
+
+### @name cleanupAllTestProducts
+# @docs Cleanup - Delete all test products
+GET {{baseUrl}}/products?page=1&limit=100
+Authorization: Bearer {{adminToken}}
+
+
+###
+DELETE {{baseUrl}}/products/{{finalCleanup[0]._id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Cleanup product 1", function() {
+   client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+ });
+%}
+
+###
+DELETE {{baseUrl}}/products/{{finalCleanup[1]._id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Cleanup product 2", function() {
+   client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+ });
+%}
+
+###
+DELETE {{baseUrl}}/products/{{finalCleanup[2]._id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Cleanup product 3", function() {
+   client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+ });
+%}
+
+###
+DELETE {{baseUrl}}/products/{{finalCleanup[3]._id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Cleanup product 4", function() {
+   client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+ });
+%}
+
+###
+DELETE {{baseUrl}}/products/{{finalCleanup[4]._id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Cleanup product 5", function() {
+   client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+ });
+%}
+
+###
+DELETE {{baseUrl}}/products/{{finalCleanup[5]._id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Cleanup product 6", function() {
+   client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+ });
+%}
+
+###
+DELETE {{baseUrl}}/products/{{finalCleanup[6]._id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Cleanup product 7", function() {
+   client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+ });
+%}
+
+###
+DELETE {{baseUrl}}/products/{{finalCleanup[7]._id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Cleanup product 8", function() {
+   client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+ });
+%}

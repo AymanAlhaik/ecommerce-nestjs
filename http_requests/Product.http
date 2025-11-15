@@ -1,0 +1,685 @@
+// **** Product API Tests (Mixed Permissions) ****
+// Set your baseUrl & admin token in WebStorm's REST Client environment variables
+// Example: baseUrl = http://localhost:3000/api
+
+
+@userToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDllYzU4MTllODUyMjM3MjIyOSIsImVtYWlsIjoidXNlcjJAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4ODksImV4cCI6MTc2MzM5Njg4OX0.5F7hipcPdebeE7LPy2upJdgpFE2vMWXvF5NF-T9EV1M
+@adminToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzE4MDk0NiwiZXhwIjoxNzYzMzk2OTQ2fQ.xrZKA3xGjrWaDCeQ0HGP6gk8t2DghwGGSBHjIKsQgMo
+@productId=691837319a3ca179c703f6d3
+@productId2=691837d89a3ca179c703f6d7
+// NOTE: Replace category, subCategory, and brand IDs with actual IDs from your database
+
+### @name loginAdmin
+# @docs Login as Admin (required for admin routes)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin123"
+}
+
+> {%
+  client.test("Admin login", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.global.set("adminToken", response.body.token);
+  });
+%}
+
+### @name loginUser
+# @docs Login as User (for permission tests)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+
+> {%
+  client.test("User login", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.global.set("userToken", response.body.token);
+  });
+%}
+
+### @name adminCreateProduct
+# @docs Admin Create Product - Success (201)
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Wireless Gaming Mouse RGB",
+  "description": "High-precision wireless gaming mouse with customizable RGB lighting and programmable buttons for competitive gaming experience",
+  "quantity": 50,
+  "imageCover": "https://example.com/images/mouse-cover.jpg",
+  "images": [
+    "https://example.com/images/mouse-1.jpg",
+    "https://example.com/images/mouse-2.jpg",
+    "https://example.com/images/mouse-3.jpg"
+  ],
+  "price": 79.99,
+  "priceAfterDiscount": 59.99,
+  "color": ["Black", "White", "Blue", "Red"],
+  "category": "656eaa7a8f1a2b3c4d5e6f7a",
+  "subCategory": "656eaa7a8f1a2b3c4d5e6f7b",
+  "brand": "656eaa7a8f1a2b3c4d5e6f7c"
+}
+
+> {%
+  client.test("Admin create product - success", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.assert(response.body.status === 201, "Response status should be 201");
+    client.assert(response.body.message === "Product created successfully", "Success message");
+    client.assert(response.body.data.title === "Wireless Gaming Mouse RGB", "Title should match");
+    client.assert(response.body.data.category !== undefined, "Should populate category");
+    client.global.set("productId", response.body.data._id);
+  });
+%}
+
+### @name adminCreateProductInvalid
+# @docs Admin Cannot Create with Invalid Data (400)
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "ab",
+  "description": "short",
+  "quantity": 0,
+  "imageCover": "not-a-valid-url",
+  "images": ["invalid-url"],
+  "price": -10,
+  "priceAfterDiscount": -5,
+  "color": ["Black"],
+  "category": "invalid-mongoid"
+}
+
+> {%
+  client.test("Admin create product - validation errors", function() {
+    client.assert(response.status === 400, "Status should be 400 Bad Request");
+  });
+%}
+
+### @name adminCreateProductMinimal
+# @docs Admin Create with Minimal Required Fields (201)
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Mechanical Keyboard Pro",
+  "description": "RGB mechanical keyboard with blue switches and aluminum frame for professional typing and gaming",
+  "quantity": 30,
+  "imageCover": "https://example.com/images/keyboard-cover.jpg",
+  "price": 129.99,
+  "category": "656eaa7a8f1a2b3c4d5e6f7a"
+}
+
+> {%
+  client.test("Admin create product minimal - success", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.assert(response.body.data.color.length === 0, "Color defaults to empty array");
+    client.assert(response.body.data.sold === 0, "Sold defaults to 0");
+    client.global.set("productId2", response.body.data._id);
+  });
+%}
+
+### @name publicGetAllProducts
+# @docs Public Get All Products - No Auth Required (200)
+GET {{baseUrl}}/products?page=1&limit=5
+
+> {%
+  client.test("Public get all products - success", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.status === 200, "Response status should be 200");
+    client.assert(Array.isArray(response.body.data), "Data should be an array");
+    client.assert(response.body.pagination !== undefined, "Should have pagination");
+    client.assert(response.body.data.length >= 1, "Should have at least 1 product");
+  });
+%}
+
+### @name publicGetProductById
+# @docs Public Get Single Product - No Auth Required (200)
+GET {{baseUrl}}/products/{{productId}}
+
+> {%
+  client.test("Public get product by ID - success", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.status === 200, "Response status should be 200");
+    client.assert(response.body.data._id === client.global.get("productId"), "ID should match");
+    client.assert(response.body.data.category !== undefined, "Should populate category");
+    client.assert(response.body.data.brand !== undefined, "Should populate brand");
+  });
+%}
+
+### @name publicGetProductNotFound
+# @docs Public Get Product - Not Found (404)
+GET {{baseUrl}}/products/507f1f77bcf86cd799439011
+
+> {%
+  client.test("Public get product - not found", function() {
+    client.assert(response.status === 404, "Status should be 404 Not Found");
+    client.assert(response.body.message === "Product with ID \"507f1f77bcf86cd799439011\" not found", "Should have not found message");
+  });
+%}
+
+### @name publicGetProductInvalidId
+# @docs Public Get Product - Invalid ObjectId (400)
+GET {{baseUrl}}/products/invalid-id-format
+
+> {%
+  client.test("Public get product - invalid ID format", function() {
+    client.assert(response.status === 400, "Status should be 400 Bad Request");
+  });
+%}
+
+### @name adminUpdateProduct
+# @docs Admin Update Product - Success (200)
+PATCH {{baseUrl}}/products/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "quantity": 75,
+  "priceAfterDiscount": 49.99,
+  "color": ["Black", "White"]
+}
+
+> {%
+  client.test("Admin update product - success", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.status === 200, "Response status should be 200");
+    client.assert(response.body.message === "Product updated successfully", "Success message");
+    client.assert(response.body.data.quantity === 75, "Quantity should be updated");
+    client.assert(response.body.data.priceAfterDiscount === 49.99, "Discount price updated");
+    client.assert(response.body.data.color.length === 2, "Color array updated");
+  });
+%}
+
+### @name adminUpdateProductNotFound
+# @docs Admin Update Non-existent Product (404)
+PATCH {{baseUrl}}/products/507f1f77bcf86cd799439011
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "quantity": 100
+}
+
+> {%
+  client.test("Admin update product - not found", function() {
+    client.assert(response.status === 404, "Status should be 404 Not Found");
+  });
+%}
+
+### @name adminUpdateProductInvalidId
+# @docs Admin Update - Invalid ObjectId (400)
+PATCH {{baseUrl}}/products/invalid-id-format
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "quantity": 100
+}
+
+> {%
+  client.test("Admin update product - invalid ID format", function() {
+    client.assert(response.status === 400, "Status should be 400 Bad Request");
+  });
+%}
+
+### @name adminDeleteProduct
+# @docs Admin Delete Product - Success (204)
+DELETE {{baseUrl}}/products/{{productId2}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Admin delete product - success", function() {
+    client.assert(response.status === 204, "Status should be 204 No Content");
+  });
+%}
+
+### @name adminDeleteProductNotFound
+# @docs Admin Delete Non-existent Product (404)
+DELETE {{baseUrl}}/products/507f1f77bcf86cd799439011
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Admin delete product - not found", function() {
+    client.assert(response.status === 404, "Status should be 404 Not Found");
+  });
+%}
+
+### @name adminDeleteProductInvalidId
+# @docs Admin Delete - Invalid ObjectId (400)
+DELETE {{baseUrl}}/products/invalid-id-format
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Admin delete product - invalid ID format", function() {
+    client.assert(response.status === 400, "Status should be 400 Bad Request");
+  });
+%}
+
+### @name userCannotCreate
+# @docs User Cannot Create Product (403)
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+  "title": "User Trying to Create",
+  "description": "This should not work as regular user",
+  "quantity": 10,
+  "imageCover": "https://example.com/test.jpg",
+  "price": 99.99,
+  "category": "656eaa7a8f1a2b3c4d5e6f7a"
+}
+
+> {%
+  client.test("User cannot create product - forbidden", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+  });
+%}
+
+### @name userCannotUpdate
+# @docs User Cannot Update Product (403)
+PATCH {{baseUrl}}/products/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+  "quantity": 999
+}
+
+> {%
+  client.test("User cannot update product - forbidden", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+  });
+%}
+
+### @name userCannotDelete
+# @docs User Cannot Delete Product (403)
+DELETE {{baseUrl}}/products/{{productId}}
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("User cannot delete product - forbidden", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+  });
+%}
+
+### @name unauthorizedCreate
+# @docs Unauthorized Create Product (401)
+POST {{baseUrl}}/products
+Content-Type: application/json
+// No Authorization header
+
+{
+  "title": "Unauthorized Product",
+  "description": "Should not work without token",
+  "quantity": 5,
+  "imageCover": "https://example.com/unauthorized.jpg",
+  "price": 49.99,
+  "category": "656eaa7a8f1a2b3c4d5e6f7a"
+}
+
+> {%
+  client.test("Unauthorized create - 401", function() {
+    client.assert(response.status === 401, "Status should be 401 Unauthorized");
+  });
+%}
+
+### @name cleanup
+# @docs Cleanup - Delete all test products as admin
+GET {{baseUrl}}/products?page=1&limit=50
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Get all products for cleanup", function() {
+    if (response.status === 200 && response.body.data.length > 0) {
+      client.global.set("cleanupProducts", response.body.data);
+    }
+  });
+%}
+###
+# Delete first cleanup product (if exists)
+DELETE {{baseUrl}}/products/{{cleanupProducts[0]._id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Cleanup first product", function() {
+   client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+ });
+%}
+###
+# Delete second cleanup product (if exists)
+DELETE {{baseUrl}}/products/{{cleanupProducts[1]._id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Cleanup second product", function() {
+   client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+ });
+%}
+
+### testing getall
+// **** Product API Tests (Advanced Query Features) ****
+// Set your baseUrl & admin token in WebStorm's REST Client environment variables
+// Example: baseUrl = http://localhost:3000/api
+
+
+### @name createTestProducts
+# @docs Create multiple products for testing queries
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Gaming Laptop Pro",
+  "description": "High-performance gaming laptop with RTX 4080 and Intel i9 processor for ultimate gaming experience",
+  "quantity": 20,
+  "imageCover": "https://example.com/laptop.jpg",
+  "price": 2499.99,
+  "priceAfterDiscount": 2299.99,
+  "sold": 15,
+  "category": "656eaa7a8f1a2b3c4d5e6f7a",
+  "brand": "656eaa7a8f1a2b3c4d5e6f7c"
+}
+
+> {%
+  client.test("Create gaming laptop", function() {
+    client.assert(response.status === 201, "Status should be 201");
+  });
+%}
+
+###
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Wireless Headset",
+  "description": "Noise-cancelling wireless headset with 30-hour battery life for gaming and work",
+  "quantity": 100,
+  "imageCover": "https://example.com/headset.jpg",
+  "price": 199.99,
+  "priceAfterDiscount": 179.99,
+  "sold": 50,
+  "category": "656eaa7a8f1a2b3c4d5e6f7a",
+  "brand": "656eaa7a8f1a2b3c4d5e6f7d"
+}
+
+> {%
+ client.test("Create wireless headset", function() {
+   client.assert(response.status === 201, "Status should be 201");
+ });
+%}
+###
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Mechanical Keyboard RGB",
+  "description": "Premium mechanical keyboard with customizable RGB backlighting and mechanical blue switches for tactile feedback",
+  "quantity": 150,
+  "imageCover": "https://example.com/keyboard.jpg",
+  "price": 149.99,
+  "priceAfterDiscount": 129.99,
+  "sold": 200,
+  "category": "656eaa7a8f1a2b3c4d5e6f7a",
+  "brand": "656eaa7a8f1a2b3c4d5e6f7e"
+}
+
+> {%
+ client.test("Create mechanical keyboard", function() {
+   client.assert(response.status === 201, "Status should be 201");
+ });
+%}
+
+### @name queryAllProducts
+# @docs Get All Products (No Filters)
+GET {{baseUrl}}/products
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Query all products", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.pagination.totalItems >= 3, "Should have at least 3 test products");
+  });
+%}
+
+### @name queryPriceRange
+# @docs Filter by Price Range (price[gte]=150&price[lte]=1800)
+GET {{baseUrl}}/products?price[gte]=150&price[lte]=1800
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Filter by price range", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    response.body.data.forEach(product => {
+      client.assert(product.price >= 150 && product.price <= 1800, "Product price in range");
+    });
+  });
+%}
+
+### @name querySoldRange
+# @docs Filter by Sold Range (sold[gte]=20&sold[lte]=100)
+GET {{baseUrl}}/products?sold[gte]=20&sold[lte]=100
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Filter by sold range", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    response.body.data.forEach(product => {
+      client.assert(product.sold >= 20 && product.sold <= 100, "Product sold in range");
+    });
+  });
+%}
+
+### @name queryRatingRange
+# @docs Filter by Rating Range (ratingsAverage[gte]=4.0)
+GET {{baseUrl}}/products?ratingsAverage[gte]=4.0
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Filter by rating range", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    response.body.data.forEach(product => {
+      client.assert(product.ratingsAverage >= 4.0, "Product rating >= 4.0");
+    });
+  });
+%}
+
+### @name queryCategoryFilter
+# @docs Filter by Category
+GET {{baseUrl}}/products?category=656eaa7a8f1a2b3c4d5e6f7a
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Filter by category", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    response.body.data.forEach(product => {
+      client.assert(product.category._id === "656eaa7a8f1a2b3c4d5e6f7a", "Category matches");
+    });
+  });
+%}
+
+### @name queryKeywordSearch
+# @docs Search by Keyword (keyword=wireless&keyword=gaming)
+GET {{baseUrl}}/products?keyword=wireless
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Search by keyword", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    response.body.data.forEach(product => {
+      const hasKeyword = product.title.toLowerCase().includes('wireless') ||
+        product.description.toLowerCase().includes('wireless');
+      client.assert(hasKeyword, "Product contains keyword");
+    });
+  });
+%}
+
+### @name querySortAscending
+# @docs Sort by Price Ascending (sort=price)
+GET {{baseUrl}}/products?sort=price
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Sort by price ascending", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    for (let i = 0; i < response.body.data.length - 1; i++) {
+      client.assert(response.body.data[i].price <= response.body.data[i + 1].price, "Price sorted ascending");
+    }
+  });
+%}
+
+### @name querySortDescending
+# @docs Sort by Rating Descending (sort=-ratingsAverage)
+GET {{baseUrl}}/products?sort=-ratingsAverage
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Sort by rating descending", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    for (let i = 0; i < response.body.data.length - 1; i++) {
+      client.assert(response.body.data[i].ratingsAverage >= response.body.data[i + 1].ratingsAverage, "Rating sorted descending");
+    }
+  });
+%}
+
+### @name querySortMultiple
+# @docs Sort by Multiple Fields (sort=price,-ratingsAverage)
+GET {{baseUrl}}/products?sort=price,-ratingsAverage
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Sort by multiple fields", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    // Should sort by price asc, then rating desc
+    const products = response.body.data;
+    for (let i = 0; i < products.length - 1; i++) {
+      if (products[i].price === products[i + 1].price) {
+        client.assert(products[i].ratingsAverage >= products[i + 1].ratingsAverage, "Secondary sort works");
+      }
+    }
+  });
+%}
+
+### @name queryFieldSelection
+# @docs Select Specific Fields (fields=title,price,sold)
+GET {{baseUrl}}/products?fields=title,price,sold
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Select specific fields", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    response.body.data.forEach(product => {
+      client.assert(product.title !== undefined, "Has title");
+      client.assert(product.price !== undefined, "Has price");
+      client.assert(product.sold !== undefined, "Has sold");
+      client.assert(product.description === undefined, "No description");
+    });
+  });
+%}
+
+### @name queryPagination
+# @docs Pagination (page=2&limit=2)
+GET {{baseUrl}}/products?page=1&limit=2
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Pagination", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.data.length <= 2, "Max 2 items per page");
+    client.assert(response.body.pagination.currentPage === 1, "Current page is 1");
+    client.assert(response.body.pagination.itemsPerPage === 2, "Limit is 2");
+  });
+%}
+
+### @name queryCombinedFilters
+# @docs Combined Filters (price[gte]=100&ratingsAverage[gte]=4.0&sort=-sold&keyword=gaming)
+GET {{baseUrl}}/products?price[gte]=100&ratingsAverage[gte]=4.0&sort=-sold&keyword=gaming
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Combined filters", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    response.body.data.forEach(product => {
+      client.assert(product.price >= 100, "Price >= 100");
+      client.assert(product.ratingsAverage >= 4.0, "Rating >= 4.0");
+      const hasGaming = product.title.toLowerCase().includes('gaming') ||
+        product.description.toLowerCase().includes('gaming');
+      client.assert(hasGaming, "Contains keyword 'gaming'");
+    });
+  });
+%}
+
+### @name queryInvalidPage
+# @docs Handle Invalid Page Parameter
+GET {{baseUrl}}/products?page=-1&limit=10
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Invalid page parameter", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.pagination.currentPage === 1, "Defaults to page 1");
+  });
+%}
+
+### @name queryInvalidLimit
+# @docs Handle Invalid Limit Parameter
+GET {{baseUrl}}/products?page=1&limit=abc
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Invalid limit parameter", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.data.length <= 10, "Defaults to limit 10");
+  });
+%}
+
+### @name cleanup
+# @docs Cleanup - Delete all test products as admin
+GET {{baseUrl}}/products?page=1&limit=50
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Get all products for cleanup", function() {
+    if (response.status === 200 && response.body.data.length > 0) {
+      client.global.set("cleanupProducts", response.body.data);
+    }
+  });
+%}
+
+# Delete test products
+DELETE {{baseUrl}}/products/{{cleanupProducts[0]._id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Cleanup product 1", function() {
+   client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+ });
+%}
+
+DELETE {{baseUrl}}/products/{{cleanupProducts[1]._id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Cleanup product 2", function() {
+   client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+ });
+%}
+
+DELETE {{baseUrl}}/products/{{cleanupProducts[2]._id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+ client.test("Cleanup product 3", function() {
+   client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+ });
+%}

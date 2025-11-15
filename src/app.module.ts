@@ -13,6 +13,7 @@ import { CouponModule } from './coupon/coupon.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { RequestProductModule } from './request-product/request-product.module';
 import { TaxModule } from './tax/tax.module';
+import { ProductModule } from './product/product.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { TaxModule } from './tax/tax.module';
     SupplierModule,
     RequestProductModule,
     TaxModule,
+    ProductModule,
   ],
   controllers: [],
   providers: [],
