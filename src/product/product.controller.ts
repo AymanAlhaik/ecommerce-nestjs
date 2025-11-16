@@ -38,8 +38,7 @@ export class ProductController {
 
   /**
    * @docs User Can retrieve all products
-   * @param page Page number for pagination
-   * @param limit Items per page
+   * @param query query strings
    * @route GET ~/products
    * @canAcess [User]
    */

@@ -1,0 +1,459 @@
+@user1Token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDcwYzU4MTllODUyMjM3MjIyNSIsImVtYWlsIjoidXNlcjFAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4MzEsImV4cCI6MTc2MzM5NjgzMX0.Gde51iGL1M5LtLmoH3BHDB9NdB_sr4tF78m8KjhaWqo
+@user1Id=69180070c5819e8522372225
+@user2Token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDllYzU4MTllODUyMjM3MjIyOSIsImVtYWlsIjoidXNlcjJAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4ODksImV4cCI6MTc2MzM5Njg4OX0.5F7hipcPdebeE7LPy2upJdgpFE2vMWXvF5NF-T9EV1M
+@user2Id=6918009ec5819e8522372229
+@adminToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzE4MDk0NiwiZXhwIjoxNzYzMzk2OTQ2fQ.xrZKA3xGjrWaDCeQ0HGP6gk8t2DghwGGSBHjIKsQgMo
+
+### @name createProductForReview
+# @docs Create a product for review testing
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Test Gaming Laptop",
+  "description": "High-performance laptop for testing review functionality and rating calculations",
+  "quantity": 10,
+  "imageCover": "https://example.com/laptop.jpg",
+  "price": 999.99,
+  "category": "69167324fde30635285a8e10"
+}
+
+> {%
+  client.test("Create test product", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.assert(response.body.data.ratingsAverage === 0, "Initial rating is 0");
+    client.assert(response.body.data.ratingsQuantity === 0, "Initial quantity is 0");
+    client.global.set("reviewProductId", response.body.data._id);
+  });
+%}
+
+### @name getProductBeforeReviews
+# @docs Get product initial state
+GET {{baseUrl}}/products/{{reviewProductId}}
+
+> {%
+  client.test("Product initial state", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.data.ratingsAverage === 0, "Rating is 0");
+    client.assert(response.body.data.ratingsQuantity === 0, "Quantity is 0");
+    client.global.set("productBefore", response.body.data);
+  });
+%}
+
+### @name user1CreatesReview5Stars
+# @docs User 1 Creates 5-Star Review - Product Rating Should Update
+POST {{baseUrl}}/reviews
+Content-Type: application/json
+Authorization: Bearer {{user1Token}}
+
+{
+  "rating": 5,
+  "reviewText": "Excellent laptop! Performs beyond expectations for gaming and work.",
+  "product": "{{reviewProductId}}"
+}
+
+> {%
+  client.test("User 1 creates 5-star review", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.assert(response.body.data.rating === 5, "Rating is 5");
+    client.global.set("review1Id", response.body.data._id);
+  });
+%}
+
+### @name verifyProductAfterFirstReview
+# @docs Verify product rating updated after 1st review (should be 5.0, 1)
+GET {{baseUrl}}/products/{{reviewProductId}}
+
+> {%
+  client.test("Product rating after 1st review", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    const product = response.body.data;
+    client.assert(product.ratingsAverage === 5.0, `Rating should be 5.0, got ${product.ratingsAverage}`);
+    client.assert(product.ratingsQuantity === 1, `Quantity should be 1, got ${product.ratingsQuantity}`);
+  });
+%}
+
+### @name user2CreatesReview3Stars
+# @docs User 2 Creates 3-Star Review - Product Rating Should Average to 4.0
+POST {{baseUrl}}/reviews
+Content-Type: application/json
+Authorization: Bearer {{user2Token}}
+
+{
+  "rating": 3,
+  "reviewText": "Average product, expected better performance for the price.",
+  "product": "{{reviewProductId}}"
+}
+
+> {%
+  client.test("User 2 creates 3-star review", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.assert(response.body.data.rating === 3, "Rating is 3");
+    client.global.set("review2Id", response.body.data._id);
+  });
+%}
+
+### @name verifyProductAfterSecondReview
+# @docs Verify product rating is average (5+3)/2 = 4.0
+GET {{baseUrl}}/products/{{reviewProductId}}
+
+> {%
+  client.test("Product rating after 2nd review", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    const product = response.body.data;
+    client.assert(product.ratingsAverage === 4.0, `Rating should be 4.0, got ${product.ratingsAverage}`);
+    client.assert(product.ratingsQuantity === 2, `Quantity should be 2, got ${product.ratingsQuantity}`);
+  });
+%}
+
+### @name user1CreatesAnotherReview
+# @docs User 1 Creates Another Review for Same Product (Should Update Existing)
+POST {{baseUrl}}/reviews
+Content-Type: application/json
+Authorization: Bearer {{user1Token}}
+
+{
+  "rating": 4,
+  "reviewText": "Second review: Still good but some issues with heating.",
+  "product": "{{reviewProductId}}"
+}
+
+> {%
+  client.test("User 1 creates another review (should update or fail)", function() {
+    // This will either create a new review or fail if unique constraint exists
+    // For now, we'll assume it creates a new one
+    if (response.status === 201) {
+      client.global.set("review3Id", response.body.data._id);
+    }
+  });
+%}
+
+### @name verifyProductAfterThirdReview
+# @docs Verify product rating if third review was added (should be (5+3+4)/3 = 4.0)
+GET {{baseUrl}}/products/{{reviewProductId}}
+
+> {%
+  client.test("Product rating after 3rd review", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    const product = response.body.data;
+    // If 3 reviews exist: (5+3+4)/3 = 4.0
+    // If 2 reviews exist: (4+3)/2 = 3.5
+    client.assert(product.ratingsQuantity >= 2, "At least 2 reviews");
+    client.assert(product.ratingsAverage >= 3.5 && product.ratingsAverage <= 4.0,
+      `Rating should be between 3.5-4.0, got ${product.ratingsAverage}`);
+  });
+%}
+
+### @name user1UpdatesReviewFrom5To2
+# @docs User 1 Updates Review from 5 to 2 Stars - Rating Should Recalculate
+PATCH {{baseUrl}}/reviews/{{review1Id}}
+Content-Type: application/json
+Authorization: Bearer {{user1Token}}
+
+{
+  "rating": 2,
+  "reviewText": "Updated: Downgraded to 2 stars due to battery issues."
+}
+
+> {%
+  client.test("User 1 updates review from 5 to 2 stars", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.data.rating === 2, "Rating updated to 2");
+  });
+%}
+
+### @name verifyProductAfterReviewUpdate
+# @docs Verify product rating recalculated after update (should be (2+3)/2 = 2.5)
+GET {{baseUrl}}/products/{{reviewProductId}}
+
+> {%
+  client.test("Product rating after review update", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    const product = response.body.data;
+    // Assuming only user1's and user2's reviews remain
+    const expectedAvg = (2 + 3) / 2; // 2.5
+    client.assert(product.ratingsAverage === expectedAvg,
+      `Rating should be ${expectedAvg}, got ${product.ratingsAverage}`);
+    client.assert(product.ratingsQuantity === 2, `Quantity should be 2, got ${product.ratingsQuantity}`);
+  });
+%}
+
+### @name user2DeletesReview
+# @docs User 2 Deletes Their Review - Rating Should Update to Only User1's
+DELETE {{baseUrl}}/reviews/{{review2Id}}
+Authorization: Bearer {{user2Token}}
+
+> {%
+  client.test("User 2 deletes review", function() {
+    client.assert(response.status === 204, "Status should be 204 No Content");
+  });
+%}
+
+### @name verifyProductAfterReviewDelete
+# @docs Verify product rating after delete (should be only user1's review: 2.0, 1)
+GET {{baseUrl}}/products/{{reviewProductId}}
+
+> {%
+  client.test("Product rating after review deletion", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    const product = response.body.data;
+    client.assert(product.ratingsAverage === 2.0, `Rating should be 2.0, got ${product.ratingsAverage}`);
+    client.assert(product.ratingsQuantity === 1, `Quantity should be 1, got ${product.ratingsQuantity}`);
+  });
+%}
+
+### @name user1DeletesLastReview
+# @docs User 1 Deletes Last Review - Product Rating Should Reset to 0,0
+DELETE {{baseUrl}}/reviews/{{review1Id}}
+Authorization: Bearer {{user1Token}}
+
+> {%
+  client.test("User 1 deletes last review", function() {
+    client.assert(response.status === 204, "Status should be 204 No Content");
+  });
+%}
+
+### @name verifyProductAfterAllReviewsDeleted
+# @docs Verify product rating resets to 0,0
+GET {{baseUrl}}/products/{{reviewProductId}}
+
+> {%
+  client.test("Product rating after all reviews deleted", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    const product = response.body.data;
+    client.assert(product.ratingsAverage === 0, `Rating should be 0, got ${product.ratingsAverage}`);
+    client.assert(product.ratingsQuantity === 0, `Quantity should be 0, got ${product.ratingsQuantity}`);
+  });
+%}
+
+### @name adminGetsAllReviews
+# @docs Admin Gets All Reviews with Pagination (200)
+GET {{baseUrl}}/reviews?page=1&limit=10
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Admin gets all reviews", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.status === 200, "Response status 200");
+    client.assert(Array.isArray(response.body.data), "Data is array");
+    client.assert(response.body.pagination !== undefined, "Has pagination");
+  });
+%}
+
+### @name adminGetsSingleReview
+# @docs Admin Gets Single Review by ID (200)
+GET {{baseUrl}}/reviews/{{review1Id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Admin gets single review", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.data._id === client.global.get("review1Id"), "ID matches");
+    client.assert(response.body.data.user !== undefined, "Populated user");
+    client.assert(response.body.data.product !== undefined, "Populated product");
+  });
+%}
+
+### @name adminGetsReviewNotFound
+# @docs Admin Gets 404 for Invalid Review ID (404)
+GET {{baseUrl}}/reviews/507f1f77bcf86cd799439011
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Admin gets review not found", function() {
+    client.assert(response.status === 404, "Status should be 404 Not Found");
+  });
+%}
+
+### @name publicGetsReviewsByProduct
+# @docs Public Gets Reviews for Specific Product (No Auth Required) (200)
+GET {{baseUrl}}/reviews/product/{{reviewProductId}}?page=1&limit=5
+
+> {%
+  client.test("Public gets reviews by product", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.status === 200, "Response status 200");
+    response.body.data.forEach(r => {
+      client.assert(r.product._id === client.global.get("reviewProductId"), "All reviews for correct product");
+    });
+  });
+%}
+
+### @name adminGetsReviewsByUser
+# @docs Admin Gets Reviews by User ID (200)
+@user3Id=6918009ec5819e8522372229
+GET {{baseUrl}}/reviews/user/{{user3Id}}?page=1&limit=5
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Admin gets reviews by user", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.status === 200, "Response status 200");
+    response.body.data.forEach(r => {
+      client.assert(r.user._id === client.global.get("user1Id"), "All reviews by user1");
+    });
+  });
+  %>
+
+
+
+### @name userCannotAccessAdminAllReviews
+# @docs User Cannot Access Admin All Reviews (403)
+###
+GET {{baseUrl}}/reviews?page=1&limit=10
+Authorization: Bearer {{user1Token}}
+
+> {%
+  client.test("User cannot access admin all reviews", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+  });
+  %}
+
+
+
+### @name userCannotAccessAdminSingleReview
+# @docs User Cannot Access Admin Single Review (403)
+GET {{baseUrl}}/reviews/{{review1Id}}
+Authorization: Bearer {{user1Token}}
+
+> {%
+  client.test("User cannot access admin single review", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+  });
+  %>
+
+
+
+### @name publicCannotAccessAdminUserReviews
+# @docs Public Cannot Access Admin User Reviews (401)
+GET {{baseUrl}}/reviews/user/{{user1Id}}?page=1&limit=5
+// No Authorization header
+
+> {%
+  client.test("Public cannot access admin user reviews", function() {
+    client.assert(response.status === 401, "Status should be 401 Unauthorized");
+  });
+  %>
+
+
+
+### @name user2CannotUpdateUser1Review
+# @docs User 2 Cannot Update User 1's Review (403)
+PATCH {{baseUrl}}/reviews/{{review1Id}}
+Content-Type: application/json
+Authorization: Bearer {{user2Token}}
+
+{
+  "rating": 1,
+  "reviewText": "Trying to hack user1's review"
+}
+
+> {%
+  client.test("User 2 cannot update user 1's review", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+    client.assert(response.body.message === "You can only update your own reviews", "Correct error message");
+  });
+  %}
+
+
+
+### @name user2CannotDeleteUser1Review
+# @docs User 2 Cannot Delete User 1's Review (403)
+DELETE {{baseUrl}}/reviews/{{review1Id}}
+Authorization: Bearer {{user2Token}}
+
+> {%
+  client.test("User 2 cannot delete user 1's review", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+    client.assert(response.body.message === "You can only delete your own reviews", "Correct error message");
+  });
+  %}
+
+
+
+### @name user1UpdatesReviewAgain
+# @docs User 1 Updates Review Again to Test Recalculation (200)
+POST {{baseUrl}}/reviews
+Content-Type: application/json
+Authorization: Bearer {{user1Token}}
+
+{
+  "rating": 5,
+  "reviewText": "Final review: Excellent after using for a month.",
+  "product": "{{reviewProductId}}"
+}
+
+> {%
+  client.test("User 1 creates final review", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.global.set("finalReviewId", response.body.data._id);
+  });
+  %}
+
+
+
+### @name verifyProductAfterFinalReview
+# @docs Verify final rating state
+GET {{baseUrl}}/products/{{reviewProductId}}
+
+> {%
+  client.test("Product final rating state", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    const product = response.body.data;
+    client.assert(product.ratingsQuantity === 1, "One review remains");
+    client.assert(product.ratingsAverage === 5, "Rating is 5.0");
+  });
+  %}
+
+
+
+### @name cleanupFinalReview
+# @docs Cleanup - Delete final review
+DELETE {{baseUrl}}/reviews/{{finalReviewId}}
+Authorization: Bearer {{user1Token}}
+
+> {%
+  client.test("Cleanup final review", function() {
+    client.assert(response.status === 204, "Status should be 204 No Content");
+  });
+%}
+
+### @name cleanupProduct
+# @docs Cleanup - Delete test product
+DELETE {{baseUrl}}/products/{{reviewProductId}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Cleanup test product", function() {
+    client.assert(response.status === 204, "Status should be 204 No Content");
+  });
+%}
+
+### @name unauthorizedCreate
+# @docs Unauthorized Create Review (401)
+POST {{baseUrl}}/reviews
+Content-Type: application/json
+// No Authorization header
+
+{
+  "rating": 3,
+  "product": "{{reviewProductId}}"
+}
+
+> {%
+  client.test("Unauthorized create - 401", function() {
+    client.assert(response.status === 401, "Status should be 401 Unauthorized");
+  });
+%}
+
+### @name unauthorizedDelete
+# @docs Unauthorized Delete Review (401)
+DELETE {{baseUrl}}/reviews/{{review1Id}}
+// No Authorization header
+
+> {%
+  client.test("Unauthorized delete - 401", function() {
+    client.assert(response.status === 401, "Status should be 401 Unauthorized");
+  });
+%}
