@@ -9,7 +9,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
-import { CreateCartDto } from './dto/create-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { UserPayload } from '../user/decorators/userPayload.decorator';
 import { Roles } from '../user/decorators/roles.decorator';
@@ -19,7 +18,6 @@ import { ParseObjectIdPipe } from '@nestjs/mongoose';
 @Controller('carts')
 export class CartController {
   constructor(private readonly cartService: CartService) {}
-
 
   /**
    * @docs User Add product to cart
@@ -53,13 +51,19 @@ export class CartController {
     return this.cartService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCartDto: UpdateCartDto) {
-    return this.cartService.update(+id, updateCartDto);
+  @Patch(':productId')
+  @Roles(['user'])
+  @UseGuards(AuthGuard)
+  update(
+    @UserPayload() user: any,
+    @Param('productId', ParseObjectIdPipe) productId: string,
+    @Body() updateCartDto: UpdateCartDto,
+  ) {
+    return this.cartService.update(user.id, productId, updateCartDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.cartService.remove(+id);
+    // return this.cartService.remove(+id);
   }
 }

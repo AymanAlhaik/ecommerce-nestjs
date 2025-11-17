@@ -1,0 +1,352 @@
+### Cart Update API Tests
+@userToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDllYzU4MTllODUyMjM3MjIyOSIsImVtYWlsIjoidXNlcjJAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4ODksImV4cCI6MTc2MzM5Njg4OX0.5F7hipcPdebeE7LPy2upJdgpFE2vMWXvF5NF-T9EV1M
+@testProductId =691a9af036764a98cce637e0
+@secondProductId =6918450374fd3cb8356a9235
+@nonExistentProductId = 507f1f77bcf86cd799439000
+@invalidProductId = invalid-id-format
+
+### ============================================
+### SUCCESS CASES
+### ============================================
+
+### 1. Update quantity of existing product in cart
+# Expected: 200 OK, cart with updated quantity and recalculated totalPrice
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 1
+}
+
+### 2. Update color of existing product in cart
+# Expected: 200 OK, color updated, quantity unchanged
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "color": "red"
+}
+
+### 3. Update both quantity and color simultaneously
+# Expected: 200 OK, both fields updated, totalPrice recalculated
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 3,
+  "color": "blue"
+}
+
+### 4. Product not in cart - should create/add to cart
+# Prerequisite: Product not currently in user's cart
+# Expected: 200 OK, product added with quantity=2 (color will NOT be saved due to create() limitation)
+PATCH {{baseUrl}}/carts/{{secondProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 2,
+  "color": "green"
+}
+
+### 5. User has no cart - should create new cart
+# Prerequisite: Clear user's cart from DB before testing
+# Expected: 201 Created, new cart with product (color will NOT be saved)
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 1,
+  "color": "yellow"
+}
+
+### 6. Set quantity to minimum valid value (1)
+# Expected: 200 OK, quantity set to 1
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 1
+}
+
+### 7. Update with very large quantity value
+# Expected: 200 OK, accepts large numbers
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 9999
+}
+
+### 8. Update color with special characters/hyphenated value
+# Expected: 200 OK, color string accepted as-is
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "color": "red-green-blue"
+}
+
+### 9. Update color to empty string
+# Expected: 200 OK, color set to empty string
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "color": ""
+}
+
+### 10. Verify totalPrice recalculation after price change
+# IMPORTANT: First manually change product price in DB, then run:
+# Expected: totalPrice reflects NEW price × current quantity
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 8
+}
+
+### ============================================
+### VALIDATION ERRORS (Expected: 400 Bad Request)
+### =========================================###
+
+### 11. Error: Invalid MongoDB ObjectId format
+PATCH {{baseUrl}}/carts/{{invalidProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+### 12. Error: Quantity less than minimum (0)
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 0
+}
+
+### 13. Error: Negative quantity
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": -5
+}
+
+### 14. Error: Quantity as float/decimal
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 2.5
+}
+
+### 15. Error: Quantity as string
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": "three"
+}
+
+### 16. Error: Color as number instead of string
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "color": 12345
+}
+
+### 17. Error: Color as boolean
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "color": true
+}
+
+### 18. Error: Invalid field name
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "qty": 3
+}
+
+### 19. Error: Empty JSON body (no fields provided)
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{}
+
+### ============================================
+### AUTHENTICATION ERRORS (Expected: 401/403)
+### =========================================###
+
+### 20. Error: Missing Authorization header (No token)
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+### 21. Error: Invalid JWT token format
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer invalid_token_string
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+### 22. Error: Expired or malformed JWT token
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid.signature
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+### 23. Error: Valid token but wrong role (if using admin token)
+# Expected: 403 Forbidden (if role-based access control is active)
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+### ============================================
+### BUSINESS LOGIC ERRORS (Expected: 404/409)
+### =========================================###
+
+### 24. Error: Product not found in database
+# Expected: 404 Not Found
+PATCH {{baseUrl}}/carts/{{nonExistentProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+### 25. Error: Out of stock product (if checking stock on update)
+# Prerequisite: Set product quantity to 0 in DB first
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 1
+}
+
+### =========================================###
+### EDGE CASES & ADDITIONAL SCENARIOS
+### =========================================###
+
+### 26. Verify color is lost when create() is called
+# This tests the limitation: create() doesn't accept color parameter
+# Expected: Product added but color field will be empty string
+PATCH {{baseUrl}}/carts/{{secondProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 1,
+  "color": "premium-gold"
+}
+
+### 27. Update same product with identical data (no-op)
+# Expected: 200 OK, cart unchanged
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 3,
+  "color": "blue"
+}
+
+### 28. Rapid successive updates
+# Run these quickly to test race conditions/concurrency
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 10
+}
+
+###
+
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 5
+}
+
+### 29. Update with only whitespace in color
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "color": "   "
+}
+
+### 30. Concurrent updates to different products
+PATCH {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "quantity": 4
+}
+
+###
+
+PATCH {{baseUrl}}/carts/{{secondProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "color": "orange"
+}
+
+### =========================================###
+### CLEANUP & VERIFICATION
+### =========================================###
+
+### 31. Final verification: Get cart to see all changes
+GET {{baseUrl}}/carts/my-cart
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 32. Clean up: Delete cart after testing
+DELETE {{baseUrl}}/carts/cart-id-here
+Authorization: Bearer {{userToken}}
+Content-Type: application/json

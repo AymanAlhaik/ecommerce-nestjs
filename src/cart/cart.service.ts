@@ -4,7 +4,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateCartDto } from './dto/create-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Cart, CartDocument } from './cart.schema';
@@ -144,8 +143,38 @@ export class CartService {
     });
   }
 
-  update(id: number, updateCartDto: UpdateCartDto) {
-    return `This action updates a #${id} cart`;
+  async update(
+    userId: string,
+    productId: string,
+    updateCartDto: UpdateCartDto,
+  ) {
+    const product = await this.getProduct(productId);
+    const cart = await this.cartModel.findOne({ user: userId });
+    //if user don't have cart, create it
+    if (!cart) {
+      return this.create(userId, productId);
+    }
+    const isProductToUpdateExists = this.isProductExistsInCart(productId, cart);
+    if (!isProductToUpdateExists.exists) {
+      return this.create(userId, productId);
+    }
+    //user has cart and product already exists
+    const productFromCart = cart.cartItems[isProductToUpdateExists.index];
+    if (updateCartDto.quantity) {
+      //remove the price of this product from total price
+      cart.totalPrice -= product.price * productFromCart.quantity;
+      //calculate new price based on new quantity
+      cart.totalPrice += updateCartDto.quantity * product.price;
+      cart.cartItems[isProductToUpdateExists.index].quantity =
+        updateCartDto.quantity;
+    }
+    updateCartDto.color
+      ? (cart.cartItems[isProductToUpdateExists.index].color =
+          updateCartDto.color)
+      : null;
+    cart.markModified('cartItems');
+    const updatedCart = await cart.save();
+    return new AppResponse({ data: updatedCart });
   }
 
   async remove(userId: string, cartId: string) {
