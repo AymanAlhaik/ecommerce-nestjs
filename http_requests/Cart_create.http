@@ -1,0 +1,348 @@
+// **** Cart API Tests - Create/Add Product Operations ****
+
+@adminToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzE4MDk0NiwiZXhwIjoxNzYzMzk2OTQ2fQ.xrZKA3xGjrWaDCeQ0HGP6gk8t2DghwGGSBHjIKsQgMo
+@userToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDllYzU4MTllODUyMjM3MjIyOSIsImVtYWlsIjoidXNlcjJAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4ODksImV4cCI6MTc2MzM5Njg4OX0.5F7hipcPdebeE7LPy2upJdgpFE2vMWXvF5NF-T9EV1M
+@user2Token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDcwYzU4MTllODUyMjM3MjIyNSIsImVtYWlsIjoidXNlcjFAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4MzEsImV4cCI6MTc2MzM5NjgzMX0.Gde51iGL1M5LtLmoH3BHDB9NdB_sr4tF78m8KjhaWqo
+### @name createTestProducts
+# @docs Create test products with different prices and stock levels
+
+# Product 1: In stock, price $99.99
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Wireless Gaming Mouse",
+  "description": "High-precision wireless gaming mouse with RGB lighting for competitive gaming",
+  "quantity": 50,
+  "imageCover": "https://example.com/mouse.jpg",
+  "price": 99.99,
+  "category": "69167324fde30635285a8e10"
+}
+
+> {%
+  client.test("Create product 1", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.global.set("product1Id", response.body.data._id);
+    client.global.set("product1Price", 99.99);
+  });
+%}
+
+###
+# Product 2: In stock, price $149.99
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Mechanical Keyboard RGB",
+  "description": "Premium mechanical keyboard with customizable RGB backlighting and blue switches",
+  "quantity": 30,
+  "imageCover": "https://example.com/keyboard.jpg",
+  "price": 149.99,
+  "category": "69167324fde30635285a8e10"
+}
+
+> {%
+  client.test("Create product 2", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.global.set("product2Id", response.body.data._id);
+    client.global.set("product2Price", 149.99);
+  });
+%}
+
+###
+# Product 3: Out of stock
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Limited Edition Headset",
+  "description": "Limited edition wireless headset with noise cancellation",
+  "quantity": 0,
+  "imageCover": "https://example.com/headset.jpg",
+  "price": 199.99,
+  "category": "69167324fde30635285a8e10"
+}
+
+> {%
+  client.test("Create product 3 (out of stock)", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.global.set("product3Id", response.body.data._id);
+  });
+%}
+
+### @name case1_CreateCartFirstTime
+# @docs Case 1: User has no cart - Create new cart with first product (201)
+POST {{baseUrl}}/carts/{{product1Id}}
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Case 1: Create cart first time", function() {
+    client.assert(response.status === 201, "Status should be 201");
+    client.assert(response.body.status === 201, "Response status 201");
+    client.assert(response.body.message === "Cart created and product added", "Correct message");
+
+    const cart = response.body.data;
+    client.assert(cart.user === client.global.get("userId"), "Cart belongs to user");
+    client.assert(cart.cartItems.length === 1, "One item in cart");
+    client.assert(cart.cartItems[0].productId === client.global.get("product1Id"), "Correct product");
+    client.assert(cart.cartItems[0].quantity === 1, "Quantity is 1");
+    client.assert(cart.totalPrice === 99.99, "Total price is $99.99");
+
+    client.global.set("cartId", cart._id);
+  });
+%}
+
+### @name case2_AddSameProductAgain
+# @docs Case 2: Add same product again - Should increase quantity to 2 (200)
+POST {{baseUrl}}/carts/{{product1Id}}
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Case 2: Add same product again", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.status === 200, "Response status 200");
+    client.assert(response.body.message === "Product quantity increased in cart", "Correct message");
+
+    const cart = response.body.data;
+    client.assert(cart.cartItems.length === 1, "Still one item");
+    client.assert(cart.cartItems[0].productId === client.global.get("product1Id"), "Same product");
+    client.assert(cart.cartItems[0].quantity === 2, "Quantity increased to 2");
+    client.assert(cart.totalPrice === 199.98, "Total price is $199.98 (99.99 * 2)");
+  });
+%}
+
+### @name case3_AddDifferentProduct
+# @docs Case 3: Add different product - Should add new item to cart (200)
+POST {{baseUrl}}/carts/{{product2Id}}
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Case 3: Add different product", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.assert(response.body.message === "New product added to cart", "Correct message");
+
+    const cart = response.body.data;
+    client.assert(cart.cartItems.length === 2, "Two items in cart");
+
+    // Find the new product
+    const keyboardItem = cart.cartItems.find(item =>
+      item.productId === client.global.get("product2Id")
+    );
+    client.assert(keyboardItem !== undefined, "Keyboard item exists");
+    client.assert(keyboardItem.quantity === 1, "Keyboard quantity is 1");
+    client.assert(cart.totalPrice === 349.97, "Total is $349.97 (199.98 + 149.99)");
+  });
+%}
+
+### @name case4_AddSameProductThirdTime
+# @docs Case 4: Add same product third time - Quantity becomes 3 (200)
+POST {{baseUrl}}/carts/{{product1Id}}
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Case 4: Add same product third time", function() {
+    client.assert(response.status === 200, "Status should be 200");
+
+    const cart = response.body.data;
+    const mouseItem = cart.cartItems.find(item =>
+      item.productId === client.global.get("product1Id")
+    );
+    client.assert(mouseItem.quantity === 3, "Quantity is 3");
+    client.assert(cart.totalPrice === 449.96, "Total is $449.96 (99.99 * 3 + 149.99)");
+  });
+%}
+
+### @name case5_AddOutOfStockProduct
+# @docs Case 5: Try to add out of stock product (400 Bad Request)
+POST {{baseUrl}}/cart/{{product3Id}}
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Case 5: Add out of stock product", function() {
+    client.assert(response.status === 400, "Status should be 400 Bad Request");
+    client.assert(response.body.message === "This product is out of stock", "Correct error message");
+  });
+%}
+
+### @name case6_AddInvalidProductId
+# @docs Case 6: Try to add invalid product ID (404 Not Found)
+POST {{baseUrl}}/carts/invalid-product-id
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Case 6: Add invalid product ID", function() {
+    client.assert(response.status === 404, "Status should be 404 Not Found");
+    client.assert(response.body.message.includes("not found"), "Product not found message");
+  });
+%}
+
+### @name case7_VerifyCartPersistence
+# @docs Case 7: Verify cart persists correctly in database
+GET {{baseUrl}}/carts
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Case 7: Verify cart persistence", function() {
+    client.assert(response.status === 200, "Status should be 200");
+
+    const cart = response.body.data;
+    client.assert(cart.cartItems.length === 2, "Two items persisted");
+    client.assert(cart.totalPrice === 449.96, "Total price persisted correctly");
+
+    // Verify both items
+    const mouseItem = cart.cartItems.find(item =>
+      item.productId === client.global.get("product1Id")
+    );
+    const keyboardItem = cart.cartItems.find(item =>
+      item.productId === client.global.get("product2Id")
+    );
+
+    client.assert(mouseItem.quantity === 3, "Mouse quantity persisted as 3");
+    client.assert(keyboardItem.quantity === 1, "Keyboard quantity persisted as 1");
+  });
+%}
+
+### @name case8_AddProductToAnotherUserCart
+# @docs Case 8: Different user creates their own cart (should not affect first user's cart)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "user2@example.com",
+  "password": "user123"
+}
+
+> {%
+  client.test("Login user 2", function() {
+    client.assert(response.status === 200, "Status should be 200");
+    client.global.set("user2Token", response.body.token);
+  });
+%}
+
+###
+POST {{baseUrl}}/carts/{{product1Id}}
+Content-Type: application/json
+Authorization: Bearer {{user2Token}}
+
+### @name case9_UnauthorizedAccess
+# @docs Case 9: Unauthorized access (401)
+POST {{baseUrl}}/carts/{{product1Id}}
+Content-Type: application/json
+// No Authorization header
+
+> {%
+  client.test("Case 9: Unauthorized access", function() {
+    client.assert(response.status === 401, "Status should be 401 Unauthorized");
+  });
+%}
+
+### @name case10_AdminCannotAccessUserRoute
+# @docs Case 10: Admin cannot access user cart route (403)
+POST {{baseUrl}}/carts/{{product1Id}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Case 10: Admin cannot access user route", function() {
+    client.assert(response.status === 403, "Status should be 403 Forbidden");
+  });
+%}
+
+### @name cleanupCarts
+# @docs Cleanup - Delete all test carts
+
+# Get user1's cart and delete it
+GET {{baseUrl}}/cart
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Get user1 cart for cleanup", function() {
+    if (response.status === 200) {
+      client.global.set("user1CartId", response.body.data._id);
+    }
+  });
+%}
+
+###
+DELETE {{baseUrl}}/cart/{{user1CartId}}
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Cleanup user1 cart", function() {
+    client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+  });
+%}
+
+###
+# Get user2's cart and delete it
+GET {{baseUrl}}/cart
+Authorization: Bearer {{user2Token}}
+
+> {%
+  client.test("Get user2 cart for cleanup", function() {
+    if (response.status === 200) {
+      client.global.set("user2CartId", response.body.data._id);
+    }
+  });
+%}
+
+###
+DELETE {{baseUrl}}/cart/{{user2CartId}}
+Authorization: Bearer {{user2Token}}
+
+> {%
+  client.test("Cleanup user2 cart", function() {
+    client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+  });
+%}
+
+### @name cleanupProducts
+# @docs Cleanup - Delete test products
+DELETE {{baseUrl}}/products/{{product1Id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Cleanup product 1", function() {
+    client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+  });
+%}
+
+###
+DELETE {{baseUrl}}/products/{{product2Id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Cleanup product 2", function() {
+    client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+  });
+%}
+
+###
+DELETE {{baseUrl}}/products/{{product3Id}}
+Authorization: Bearer {{adminToken}}
+
+> {%
+  client.test("Cleanup product 3", function() {
+    client.assert(response.status === 204 || response.status === 404, "Should be 204 or 404");
+  });
+%}
+
+### @name debugFinalState
+# @docs Debug: Verify cleanup worked
+GET {{baseUrl}}/cart
+Authorization: Bearer {{userToken}}
+
+> {%
+  client.test("Verify user1 cart deleted", function() {
+    client.assert(response.status === 404, "Cart should not exist");
+  });
+%}
