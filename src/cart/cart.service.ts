@@ -10,13 +10,17 @@ import { Cart, CartDocument } from './cart.schema';
 import { Model } from 'mongoose';
 import { Product, ProductDocument } from '../product/product.schema';
 import { AppResponse } from '../utils/appResponse';
+import { Coupon } from '../coupon/coupon.schema';
 
 @Injectable()
 export class CartService {
   constructor(
     @InjectModel('Product')
     private readonly productModel: Model<ProductDocument>,
-    @InjectModel('Cart') private readonly cartModel: Model<Cart>,
+    @InjectModel('Cart')
+    private readonly cartModel: Model<Cart>,
+    @InjectModel('Coupon')
+    private readonly couponModel: Model<Coupon>,
   ) {}
 
   async create(userId: string, productId: string) {
@@ -67,10 +71,10 @@ export class CartService {
   }
 
   private getActualProductPrice(product: Product): number {
-    if(product.priceAfterDiscount){
+    if (product.priceAfterDiscount) {
       return product.price - product.priceAfterDiscount;
     }
-    return  product.price;
+    return product.price;
   }
 
   private isProductExistsInCart(
@@ -98,8 +102,8 @@ export class CartService {
     return product;
   }
 
-  async findAll(query:any) {
-    const {page= 1, limit= 10} = query;
+  async findAll(query: any) {
+    const { page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;
 
     const [carts, total] = await Promise.all([
@@ -129,19 +133,21 @@ export class CartService {
   }
 
   async findOne(userId: string) {
-    const cart = await this.cartModel.findOne({ user: userId }).populate({
-      path: 'cartItems.productId',
-      model: Product.name,
-      select: 'title price images color priceAfterDiscount',
-      options:{lean:true}
-    })
+    const cart = await this.cartModel
+      .findOne({ user: userId })
+      .populate({
+        path: 'cartItems.productId',
+        model: Product.name,
+        select: 'title price images color priceAfterDiscount',
+        options: { lean: true },
+      })
       .lean()
       .exec();
 
     if (!cart) {
       throw new NotFoundException('You do not have a cart');
     }
-    return new AppResponse({data:cart});
+    return new AppResponse({ data: cart });
   }
 
   async findByUser(userId: string) {
@@ -182,7 +188,7 @@ export class CartService {
     //user has cart and product already exists
     const productFromCart = cart.cartItems[isProductToUpdateExists.index];
     if (updateCartDto.quantity) {
-      if(updateCartDto.quantity > product.quantity ) {
+      if (updateCartDto.quantity > product.quantity) {
         throw new BadRequestException('Quantity is out of stock ');
       }
       //remove the price of this product from total price
@@ -225,5 +231,30 @@ export class CartService {
     cart.markModified('cartItems');
     const updatedCart = await cart.save();
     return new AppResponse({ data: updatedCart });
+  }
+
+  async applyCoupon(userId: string, couponName: string) {
+    const cart = await this.cartModel.findOne({ user: userId });
+    if (!cart) {
+      throw new NotFoundException('You do not have a cart');
+    }
+    const coupon = await this.couponModel.findOne({ name: couponName });
+    if (!coupon) {
+      throw new BadRequestException('Invalid coupon');
+    }
+    if (new Date(coupon.expiryDate) < new Date()) {
+      throw new BadRequestException('Invalid coupon');
+    }
+    const isCouponUsedBefore = cart.coupons.find(c => c.name===couponName);
+    if(isCouponUsedBefore) {
+      throw new BadRequestException('You can not apply coupon');
+    }
+    //coupon is a raw number should be subtracted from total price
+    cart.totalPrice -= coupon.discount;
+    //add coupon to coupons array as used for this cart
+    cart.coupons.push({name: couponName, couponId: coupon._id.toString()});
+    cart.markModified('coupons');
+    await cart.save();
+    return new AppResponse();
   }
 }

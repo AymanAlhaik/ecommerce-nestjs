@@ -1,19 +1,17 @@
 // **** Coupon API Tests (Admin Only) ****
 // Set your baseUrl in WebStorm's REST Client environment variables
 // Example: baseUrl = http://localhost:3000/api
-@authToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzE2NzUzOSwiZXhwIjoxNzYzMzgzNTM5fQ.PiL62PHooumRE4ugJ6CfO3Mcx__nNuqC7Daedo1c43M
-@couponId=6917df9ded8f9652bcc435c7
 
 ### @name createCoupon
 # @docs Create Coupon - Success
 POST {{baseUrl}}/coupons
 Content-Type: application/json
-Authorization: Bearer {{authToken}}
+Authorization: Bearer {{adminToken}}
 
 {
-  "name": "SUMMER2024",
+  "name": "WINTER2026",
   "expiryDate": "2025-12-31",
-  "discount": 25
+  "discount":2000
 }
 
 > {%
@@ -26,7 +24,7 @@ Authorization: Bearer {{authToken}}
 # @docs Create Coupon - Success
 POST {{baseUrl}}/coupons
 Content-Type: application/json
-Authorization: Bearer {{authToken}}
+Authorization: Bearer {{adminToken}}
 
 {
   "name": "SUMMER2024",

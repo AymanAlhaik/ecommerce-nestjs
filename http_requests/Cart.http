@@ -218,3 +218,6 @@ Content-Type: {{contentType}}
 DELETE {{baseUrl}}/carts/{{testCartId}}
 Authorization: Bearer {{adminToken}}
 Content-Type: {{contentType}}
+###===============================================
+POST {{baseUrl}}/carts/coupon/WINTER2024
+Authorization: Bearer {{userToken}}

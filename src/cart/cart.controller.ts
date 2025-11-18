@@ -64,6 +64,21 @@ export class CartController {
     return this.cartService.findOne(user.id);
   }
 
+  /**
+   * Apply coupon for current user
+   * @param {any} user - Authenticated user object from JWT
+   * @access User only
+   * @example GET ~/carts/coupon/:couponName
+   */
+  @Post('coupon/:couponName')
+  @Roles(['user'])
+  @UseGuards(AuthGuard)
+  applyCoupon(
+    @Param('couponName') couponName: string,
+    @UserPayload() user: any) {
+    return this.cartService.applyCoupon(user.id, couponName);
+  }
+
   @Patch(':productId')
   @Roles(['user'])
   @UseGuards(AuthGuard)
