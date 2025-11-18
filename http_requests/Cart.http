@@ -1,0 +1,220 @@
+### Get User's Cart with Populated Products
+# Prerequisites:
+# 1. Replace baseUrl and userToken with actual values
+# 2. Add at least one product to cart before testing
+
+### 1. SUCCESS: Get cart with populated products
+# Expected: 200 OK, cart with cartItems.productId as full product objects
+GET {{baseUrl}}/carts/my-cart
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 2. ERROR: User has no cart
+# Expected: 404 Not Found with message "You do not have a cart"
+# Prerequisite: Ensure user has no cart in database
+GET {{baseUrl}}/carts/my-cart
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 3. ERROR: Invalid or expired token
+# Expected: 401 Unauthorized
+GET {{baseUrl}}/carts/my-cart
+Authorization: Bearer invalid_token_here
+Content-Type: application/json
+
+### 4. SETUP: Add product to cart first (if needed)
+POST {{baseUrl}}/carts/507f1f77bcf86cd799439011
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 5. VERIFY: Check populated response structure
+# Expected: cartItems should have nested product objects with selected fields
+GET {{baseUrl}}/carts/my-cart
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+### ==================================================================
+
+### @import ./dev.http
+
+# =============================================================================
+# ADMIN CART ROUTES - Get All Carts with Pagination
+# Only accessible by admin role
+# =============================================================================
+
+### =========================================###
+### SUCCESS CASES
+### =========================================###
+
+### 1. Get all carts with default pagination (page=1, limit=10)
+# Expected: 200 OK, returns first 10 carts
+GET {{baseUrl}}/carts
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### 2. Get second page with 5 items per page
+# Expected: 200 OK, returns page 2 with 5 carts
+GET {{baseUrl}}/carts?page=1&limit=5
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### 3. Get first page with 20 items
+# Expected: 200 OK, returns 20 carts sorted by newest
+GET {{baseUrl}}/carts?page=1&limit=20
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### 4. Get last page (when page > totalPages)
+# Expected: 200 OK, empty data array
+GET {{baseUrl}}/carts?page=999&limit=10
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### 5. Verify populated data structure
+# Expected: User and product details should be populated, not just IDs
+GET {{baseUrl}}/carts?page=1&limit=1
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### =========================================###
+### ERROR CASES - Authentication & Authorization
+### =========================================###
+
+### 6. Error: No token provided
+# Expected: 401 Unauthorized
+GET {{baseUrl}}/carts
+Content-Type: {{contentType}}
+
+### 7. Error: Invalid token format
+# Expected: 401 Unauthorized
+GET {{baseUrl}}/carts
+Authorization: Bearer invalid_token_here
+Content-Type: {{contentType}}
+
+### 8. Error: User token (non-admin) attempting access
+# Expected: 403 Forbidden
+GET {{baseUrl}}/carts
+Authorization: Bearer {{userToken}}
+Content-Type: {{contentType}}
+
+### 9. Error: Expired token
+# Expected: 401 Unauthorized
+GET {{baseUrl}}/carts
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.expired.signature
+Content-Type: {{contentType}}
+
+### =========================================###
+### ERROR CASES - Validation
+### =========================================###
+
+### 10. Error: Invalid page parameter (negative)
+# Expected: 400 Bad Request (if validation is implemented)
+GET {{baseUrl}}/carts?page=-1&limit=10
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### 11. Error: Invalid limit parameter (zero)
+# Expected: 400 Bad Request
+GET {{baseUrl}}/carts?page=1&limit=0
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### 12. Error: Non-numeric page parameter
+# Expected: 400 Bad Request (NaN handling)
+GET {{baseUrl}}/carts?page=abc&limit=10
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### 13. Error: Non-numeric limit parameter
+# Expected: 400 Bad Request
+GET {{baseUrl}}/carts?page=1&limit=abc
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### =========================================###
+### EDGE CASES
+### =========================================###
+
+### 14. Edge case: Very large limit (stress test)
+# Expected: 200 OK, but may timeout if limit is too large
+GET {{baseUrl}}/carts?page=1&limit=1000
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### 15. Edge case: Decimal values (should floor or error)
+# Expected: 400 Bad Request if strict, or parses to integer
+GET {{baseUrl}}/carts?page=1.5&limit=10.7
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### 16. Edge case: Empty database (no carts)
+# Expected: 200 OK, data: [], pagination shows 0 items
+# Prerequisite: Clear carts collection before test
+GET {{baseUrl}}/carts
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### =========================================###
+### SETUP & VERIFICATION
+### =========================================###
+
+### 17. SETUP: Create test data - Add multiple carts for different users
+# Run these first if database is empty
+
+### 17a. Create cart for user 1
+POST {{baseUrl}}/carts/{{testProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: {{contentType}}
+
+### 17b. Create cart for user 2 (requires different user token)
+POST {{baseUrl}}/carts/{{secondProductId}}
+Authorization: Bearer {{user2Token}}
+Content-Type: {{contentType}}
+
+### 18. VERIFICATION: Check pagination math
+# Expected: pagination.totalPages = ceil(totalItems / itemsPerPage)
+GET {{baseUrl}}/carts?page=1&limit=5
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### =========================================###
+### PERFORMANCE TESTING
+### =========================================###
+
+### 19. Test response time with default population
+# Expected: < 200ms for small datasets
+# Visual indicator: REST Client shows response time at top
+GET {{baseUrl}}/carts?page=1&limit=50
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### 20. Compare with lean vs non-lean performance
+# To test without lean(), temporarily modify service
+GET {{baseUrl}}/carts?page=1&limit=10
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### =========================================###
+### RESPONSE STRUCTURE VALIDATION
+### =========================================###
+
+### 21. Verify pagination object structure
+# Expected: All pagination fields present and calculated correctly
+GET {{baseUrl}}/carts?page=3&limit=7
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### 22. Verify populated fields are not null
+# Expected: No null values in populated user/product fields
+GET {{baseUrl}}/carts?page=1&limit=20
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+### =========================================###
+### CLEANUP
+### =========================================###
+
+### 23. CLEANUP: Delete test carts after testing
+# Requires cart IDs from previous responses
+DELETE {{baseUrl}}/carts/{{testCartId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}

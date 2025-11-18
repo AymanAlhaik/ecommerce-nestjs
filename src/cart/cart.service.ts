@@ -30,7 +30,8 @@ export class CartService {
     if (cart) {
       //if product is already exists in the cart => increase its quantity
       const isProductExistBefore = this.isProductExistsInCart(productId, cart);
-      cart.totalPrice += productToInsert.price;
+      const productActualPrice = this.getActualProductPrice(productToInsert);
+      cart.totalPrice += productActualPrice;
       if (isProductExistBefore.exists) {
         cart.cartItems[isProductExistBefore.index].quantity += 1;
       } else {
@@ -58,11 +59,18 @@ export class CartService {
     else {
       const newCart = await this.cartModel.create({
         cartItems: [{ productId, quantity: 1, color: '' }],
-        totalPrice: productToInsert.price,
+        totalPrice: this.getActualProductPrice(productToInsert),
         user: userId,
       });
       return new AppResponse({ status: 201, data: newCart });
     }
+  }
+
+  private getActualProductPrice(product: Product): number {
+    if(product.priceAfterDiscount){
+      return product.price - product.priceAfterDiscount;
+    }
+    return  product.price;
   }
 
   private isProductExistsInCart(
@@ -90,7 +98,8 @@ export class CartService {
     return product;
   }
 
-  async findAll(page: number = 1, limit: number = 10) {
+  async findAll(query:any) {
+    const {page= 1, limit= 10} = query;
     const skip = (page - 1) * limit;
 
     const [carts, total] = await Promise.all([
@@ -119,8 +128,20 @@ export class CartService {
     });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} cart`;
+  async findOne(userId: string) {
+    const cart = await this.cartModel.findOne({ user: userId }).populate({
+      path: 'cartItems.productId',
+      model: Product.name,
+      select: 'title price images color priceAfterDiscount',
+      options:{lean:true}
+    })
+      .lean()
+      .exec();
+
+    if (!cart) {
+      throw new NotFoundException('You do not have a cart');
+    }
+    return new AppResponse({data:cart});
   }
 
   async findByUser(userId: string) {
@@ -161,10 +182,17 @@ export class CartService {
     //user has cart and product already exists
     const productFromCart = cart.cartItems[isProductToUpdateExists.index];
     if (updateCartDto.quantity) {
+      if(updateCartDto.quantity > product.quantity ) {
+        throw new BadRequestException('Quantity is out of stock ');
+      }
       //remove the price of this product from total price
-      cart.totalPrice -= product.price * productFromCart.quantity;
+      const productActualPrice =
+        product.priceAfterDiscount == 0
+          ? product.price
+          : product.priceAfterDiscount!;
+      cart.totalPrice -= productActualPrice * productFromCart.quantity;
       //calculate new price based on new quantity
-      cart.totalPrice += updateCartDto.quantity * product.price;
+      cart.totalPrice += updateCartDto.quantity * productActualPrice;
       cart.cartItems[isProductToUpdateExists.index].quantity =
         updateCartDto.quantity;
     }
@@ -177,19 +205,25 @@ export class CartService {
     return new AppResponse({ data: updatedCart });
   }
 
-  async remove(userId: string, cartId: string) {
-    const cart = await this.cartModel.findById(cartId);
-
+  async remove(userId: string, productId: string) {
+    const cart = await this.cartModel.findOne({ user: userId });
     if (!cart) {
       throw new NotFoundException('Cart not found');
     }
-
-    if (cart.user.toString() !== userId) {
-      throw new ForbiddenException('You can only delete your own cart');
+    const productFromCart = this.isProductExistsInCart(productId, cart);
+    if (!productFromCart.exists) {
+      throw new NotFoundException('This product not in your cart');
     }
-
-    await this.cartModel.findByIdAndDelete(cartId);
-
-    return new AppResponse();
+    const product = await this.getProduct(productId);
+    // subtract product price from total price
+    const productActualPrice = this.getActualProductPrice(product);
+    cart.totalPrice -=
+      productActualPrice * cart.cartItems[productFromCart.index].quantity;
+    // remove product from cartItems
+    cart.cartItems.splice(productFromCart.index, 1);
+    //update cart
+    cart.markModified('cartItems');
+    const updatedCart = await cart.save();
+    return new AppResponse({ data: updatedCart });
   }
 }

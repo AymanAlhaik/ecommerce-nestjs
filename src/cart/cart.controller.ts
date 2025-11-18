@@ -7,6 +7,8 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { UpdateCartDto } from './dto/update-cart.dto';
@@ -42,13 +44,24 @@ export class CartController {
    * @canAcess [admin]
    */
   @Get()
-  findAll() {
-    return this.cartService.findAll();
+  @Roles(['admin'])
+  @UseGuards(AuthGuard)
+  findAll(@Query() query: any) {
+    return this.cartService.findAll(query);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.cartService.findOne(+id);
+  /**
+   * Get current user's cart with populated products
+   * @param {any} user - Authenticated user object from JWT
+   * @returns {Promise<AppResponse<Cart>>} Cart with populated product details
+   * @access User only
+   * @example GET ~/carts/my-cart
+   */
+  @Get('my-cart')
+  @Roles(['user'])
+  @UseGuards(AuthGuard)
+  getMyCart(@UserPayload() user: any) {
+    return this.cartService.findOne(user.id);
   }
 
   @Patch(':productId')
@@ -62,8 +75,10 @@ export class CartController {
     return this.cartService.update(user.id, productId, updateCartDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    // return this.cartService.remove(+id);
+  @Delete(':productId')
+  @Roles(['user'])
+  @UseGuards(AuthGuard)
+  remove(@UserPayload() user: any, @Param('productId') productId: string) {
+    return this.cartService.remove(user.id, productId);
   }
 }

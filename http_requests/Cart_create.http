@@ -1,7 +1,6 @@
 // **** Cart API Tests - Create/Add Product Operations ****
 
 @adminToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzE4MDk0NiwiZXhwIjoxNzYzMzk2OTQ2fQ.xrZKA3xGjrWaDCeQ0HGP6gk8t2DghwGGSBHjIKsQgMo
-@userToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDllYzU4MTllODUyMjM3MjIyOSIsImVtYWlsIjoidXNlcjJAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4ODksImV4cCI6MTc2MzM5Njg4OX0.5F7hipcPdebeE7LPy2upJdgpFE2vMWXvF5NF-T9EV1M
 @user2Token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDcwYzU4MTllODUyMjM3MjIyNSIsImVtYWlsIjoidXNlcjFAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4MzEsImV4cCI6MTc2MzM5NjgzMX0.Gde51iGL1M5LtLmoH3BHDB9NdB_sr4tF78m8KjhaWqo
 ### @name createTestProducts
 # @docs Create test products with different prices and stock levels
@@ -75,7 +74,8 @@ Authorization: Bearer {{adminToken}}
 
 ### @name case1_CreateCartFirstTime
 # @docs Case 1: User has no cart - Create new cart with first product (201)
-POST {{baseUrl}}/carts/{{product1Id}}
+@newProductId=691bb3da59a672ec518decfc
+POST {{baseUrl}}/carts/{{newProductId}}
 Content-Type: application/json
 Authorization: Bearer {{userToken}}
 

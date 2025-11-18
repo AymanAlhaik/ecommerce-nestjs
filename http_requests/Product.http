@@ -3,8 +3,6 @@
 // Example: baseUrl = http://localhost:3000/api
 
 
-@userToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDllYzU4MTllODUyMjM3MjIyOSIsImVtYWlsIjoidXNlcjJAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4ODksImV4cCI6MTc2MzM5Njg4OX0.5F7hipcPdebeE7LPy2upJdgpFE2vMWXvF5NF-T9EV1M
-@adminToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTU2MjIyMmJiNjAxNzk5OTgwMGMxNyIsImVtYWlsIjoiQXltYW5BbGhhaWtnQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2MzE4MDk0NiwiZXhwIjoxNzYzMzk2OTQ2fQ.xrZKA3xGjrWaDCeQ0HGP6gk8t2DghwGGSBHjIKsQgMo
 @productId=691837319a3ca179c703f6d3
 @productId2=691837d89a3ca179c703f6d7
 // NOTE: Replace category, subCategory, and brand IDs with actual IDs from your database
@@ -50,21 +48,17 @@ Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
 {
-  "title": "Wireless Gaming Mouse RGB",
+  "title": "Keyboard",
   "description": "High-precision wireless gaming mouse with customizable RGB lighting and programmable buttons for competitive gaming experience",
-  "quantity": 50,
-  "imageCover": "https://example.com/images/mouse-cover.jpg",
+  "quantity": 20,
+  "imageCover": "https://example.com/images/keyboard-cover.jpg",
   "images": [
-    "https://example.com/images/mouse-1.jpg",
-    "https://example.com/images/mouse-2.jpg",
-    "https://example.com/images/mouse-3.jpg"
+    "https://example.com/images/keyboard-1.jpg"
   ],
   "price": 79.99,
   "priceAfterDiscount": 59.99,
-  "color": ["Black", "White", "Blue", "Red"],
-  "category": "656eaa7a8f1a2b3c4d5e6f7a",
-  "subCategory": "656eaa7a8f1a2b3c4d5e6f7b",
-  "brand": "656eaa7a8f1a2b3c4d5e6f7c"
+  "color": ["Black", "White", "Blue"],
+  "category": "69167324fde30635285a8e10"
 }
 
 > {%

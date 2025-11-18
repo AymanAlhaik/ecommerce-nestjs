@@ -11,8 +11,6 @@ import {
   TokenExpiredError,
 } from '@nestjs/jwt';
 import { Request } from 'express';
-import * as process from 'node:process';
-import { UserService } from '../user.service';
 import { Reflector } from '@nestjs/core';
 import { Roles } from '../decorators/roles.decorator';
 

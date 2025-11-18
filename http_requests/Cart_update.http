@@ -1,6 +1,6 @@
 ### Cart Update API Tests
 @userToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTgwMDllYzU4MTllODUyMjM3MjIyOSIsImVtYWlsIjoidXNlcjJAZ21haWwuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NjMxODA4ODksImV4cCI6MTc2MzM5Njg4OX0.5F7hipcPdebeE7LPy2upJdgpFE2vMWXvF5NF-T9EV1M
-@testProductId =691a9af036764a98cce637e0
+@testProductId =691aefaf2b8de7005be7ae5b
 @secondProductId =6918450374fd3cb8356a9235
 @nonExistentProductId = 507f1f77bcf86cd799439000
 @invalidProductId = invalid-id-format
@@ -16,7 +16,7 @@ Authorization: Bearer {{userToken}}
 Content-Type: application/json
 
 {
-  "quantity": 1
+  "quantity": 2
 }
 
 ### 2. Update color of existing product in cart
@@ -348,5 +348,219 @@ Content-Type: application/json
 
 ### 32. Clean up: Delete cart after testing
 DELETE {{baseUrl}}/carts/cart-id-here
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+### ===========================================================Remove Product from Cart=================
+
+### 1. Remove product with quantity > 1 from cart
+# Expected: Product removed completely, totalPrice reduced by price*quantity
+# Before: cartItems contains this product with quantity=5
+# Test Product IDs - replace with your actual product IDs
+@productInCart =6918450374fd3cb8356a9235
+@productInCartWithQty8 =691a9af036764a98cce637e0
+@productNotInCart = 507f1f77bcf86cd799439013
+@nonExistentProduct = 507f1f77bcf86cd799439000
+
+DELETE {{baseUrl}}/carts/{{productInCartWithQty8}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 2. Remove product with quantity = 1 from cart
+# Expected: Product removed, array becomes shorter, totalPrice reduced
+DELETE {{baseUrl}}/carts/{{productInCart}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 3. Remove the last product in cart (cart becomes empty)
+# Expected: cartItems=[], totalPrice=0, cart still exists
+DELETE {{baseUrl}}/carts/{{productNotInCart}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 4. Verify cart is empty after removing all products
+# Run this after successful removals to confirm state
+GET {{baseUrl}}/carts/my-cart
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### =========================================###
+### VALIDATION ERRORS (Expected: 400 Bad Request)
+### =========================================###
+
+### 5. Error: Invalid MongoDB ObjectId format
+# Expected: 400 Bad Request from ParseObjectIdPipe
+DELETE {{baseUrl}}/carts/{{invalidProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 6. Error: Malformed ID (too short/invalid characters)
+DELETE {{baseUrl}}/carts/12345
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### =========================================###
+### AUTHENTICATION ERRORS (Expected: 401/403)
+### =========================================###
+
+### 7. Error: Missing Authorization header (No token)
+# Expected: 401 Unauthorized
+DELETE {{baseUrl}}/carts/{{productInCart}}
+Content-Type: application/json
+
+### 8. Error: Invalid JWT token format
+# Expected: 401 Unauthorized
+DELETE {{baseUrl}}/carts/{{productInCart}}
+Authorization: Bearer invalid_token_string
+Content-Type: application/json
+
+### 9. Error: Expired or malformed JWT token
+# Expected: 401 Unauthorized
+DELETE {{baseUrl}}/carts/{{productInCart}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid.signature
+Content-Type: application/json
+
+### 10. Error: Valid admin token but user role required
+# Expected: 403 Forbidden (if role-based guard is active)
+DELETE {{baseUrl}}/carts/{{productInCart}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### =========================================###
+### BUSINESS LOGIC ERRORS (Expected: 404 Not Found)
+### =========================================###
+
+### 11. Error: Product not found in user's cart
+# Prerequisite: Ensure productNotInCart is NOT in the cart
+# Expected: 404 Not Found or 400 Bad Request
+DELETE {{baseUrl}}/carts/{{productNotInCart}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 12. Error: Product ID not found in database
+# Expected: 404 Not Found from getProduct() call
+DELETE {{baseUrl}}/carts/{{nonExistentProduct}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 13. Error: User has no cart
+# Prerequisite: Delete user's cart from DB before running
+# Expected: 404 Not Found
+DELETE {{baseUrl}}/carts/{{productInCart}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### =========================================###
+### EDGE CASES & CONCURRENCY
+### =========================================###
+
+### 14. Try removing same product twice (second attempt should fail)
+# First removal - should succeed
+DELETE {{baseUrl}}/carts/{{productInCart}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 15. Second removal of same product - should error
+DELETE {{baseUrl}}/carts/{{productInCart}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 16. Rapid sequential removals
+# Run these quickly to test for race conditions
+DELETE {{baseUrl}}/carts/{{productInCart}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+###
+
+DELETE {{baseUrl}}/carts/{{productInCartWithQty5}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 17. Remove product with special characters in ID path
+# Using a URL-encoded alternative format (if your system supports it)
+DELETE {{baseUrl}}/carts/507f1f77bcf86cd799439011
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### =========================================###
+### SETUP & CLEANUP REQUESTS
+### =========================================###
+
+### 18. SETUP: Add products to cart first (if cart is empty)
+# Run these before removal tests to ensure products exist in cart
+POST {{baseUrl}}/carts/{{productInCart}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+###
+
+POST {{baseUrl}}/carts/{{productInCartWithQty5}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 19. CLEANUP: Delete entire cart after testing
+# Gets cart ID then deletes the whole cart
+GET {{baseUrl}}/carts/my-cart
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### Response data would be:
+# {
+#   "data": { "_id": "507f1f77bcf86cd799439014", ... }
+# }
+# Use this ID in the next request:
+
+DELETE {{baseUrl}}/carts/507f1f77bcf86cd799439014
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### 20. Verification: Confirm cart deletion
+# Expected: 404 Not Found or empty response
+GET {{baseUrl}}/carts/my-cart
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+### =========================================###
+### ALTERNATIVE TOKEN (if testing different user)
+### =========================================###
+
+### 21. Setup: Login as different user
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "user2@example.com",
+  "password": "password123"
+}
+
+### 22. Use new token for user-specific tests
+# Copy token from response and replace in Authorization header
+DELETE {{baseUrl}}/carts/{{productInCart}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+### =========================================###
+### POSTMAN-COMPATIBLE (for copy-paste)
+### =========================================###
+
+### 23. Remove product - success case
+# Method: DELETE
+# URL: {{baseUrl}}/carts/:productId
+# Headers:
+#   Authorization: Bearer <token>
+#   Content-Type: application/json
+
+### =========================================###
+### ERROR RESPONSE VALIDATION
+### =========================================###
+
+### 24. Test error response structure
+# Expected structure:
+# {
+#   "status": 404,
+#   "message": "Product not found in cart",
+#   "data": null
+# }
+DELETE {{baseUrl}}/carts/{{productNotInCart}}
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
