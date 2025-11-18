@@ -64,7 +64,6 @@ export class Product {
     type: Number,
     min: 1,
     max: 20000,
-    default: (c => c.price),
   })
   priceAfterDiscount?: number;
 

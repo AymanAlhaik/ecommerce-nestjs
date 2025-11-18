@@ -46,6 +46,12 @@ export class ProductService {
         throw new NotFoundException('Subcategory not exists');
       }
     }
+    //priceAfterDiscount should be lees or equal to price
+    if(createProductDto.priceAfterDiscount){
+      if(createProductDto.priceAfterDiscount > createProductDto.price){
+        throw new BadRequestException("PriceAfterDiscount shouldn't be greater than price");
+      }
+    }
     const createdProduct = new this.productModel(createProductDto);
     const savedProduct = await createdProduct.save();
 
@@ -188,6 +194,18 @@ export class ProductService {
       );
       if (!subCategory) {
         throw new NotFoundException('Subcategory not exists');
+      }
+    }
+    //priceAfterDiscount should be lees or equal to price
+    if(updateProductDto.priceAfterDiscount) {
+      if (!updateProductDto.price) {
+        const product = await this.productModel.findById(id).select('price');
+        if (!product) {
+          throw new NotFoundException('Product not exists');
+        }
+        if (updateProductDto.priceAfterDiscount > product['price']) {
+          throw new BadRequestException("PriceAfterDiscount shouldn't be greater than price");
+        }
       }
     }
     const updatedProduct = await this.productModel

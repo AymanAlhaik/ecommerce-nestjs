@@ -48,7 +48,7 @@ Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
 {
-  "title": "Keyboard",
+  "title": "Htp laptop",
   "description": "High-precision wireless gaming mouse with customizable RGB lighting and programmable buttons for competitive gaming experience",
   "quantity": 20,
   "imageCover": "https://example.com/images/keyboard-cover.jpg",
@@ -56,7 +56,7 @@ Authorization: Bearer {{adminToken}}
     "https://example.com/images/keyboard-1.jpg"
   ],
   "price": 79.99,
-  "priceAfterDiscount": 59.99,
+  "priceAfterDiscount": 19.99,
   "color": ["Black", "White", "Blue"],
   "category": "69167324fde30635285a8e10"
 }
@@ -171,13 +171,14 @@ GET {{baseUrl}}/products/invalid-id-format
 
 ### @name adminUpdateProduct
 # @docs Admin Update Product - Success (200)
-PATCH {{baseUrl}}/products/{{productId}}
+@product2Id = 691c7c59e018677ca3b6e08e
+PATCH {{baseUrl}}/products/{{product2Id}}
 Content-Type: application/json
 Authorization: Bearer {{adminToken}}
 
 {
   "quantity": 75,
-  "priceAfterDiscount": 49.99,
+  "priceAfterDiscount": 99.99,
   "color": ["Black", "White"]
 }
 
